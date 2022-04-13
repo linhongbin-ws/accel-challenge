@@ -5,7 +5,7 @@ import rospy
 from std_msgs.msg import Bool
 from argparse import ArgumentParser
 from geometry_msgs.msg import TransformStamped
-# from gym_suture.tool import TransformStamped2T
+# from accel_challenge.challenge2.tool import TransformStamped2T
 from sensor_msgs.msg import JointState
 
 class PSMCRTKWrapperModified(PSMCRTKWrapper):
