@@ -535,7 +535,7 @@ class ECMClient(BaseClient):
         
         # self.subs['cameraL_local_state'] = Subscriber(self.topic_wrap('/ambf/env/cameras/cameraL/State'), CameraState, self._cameraL_local_state_cb)
         # self.subs['cameraR_local_state'] = Subscriber(self.topic_wrap('/ambf/env/cameras/cameraR/State'), CameraState, self._cameraR_local_state_cb)
-        self.subs['camera_frame_state'] = Subscriber(self.topic_wrap('/CRTK/ecm/measured_cp'), TransformStamped, self._camera_frame_state_cb)   
+        self.subs['camera_frame_state'] = Subscriber(self.topic_wrap('/CRTK/ecm/measured_cp'), PoseStamped, self._camera_frame_state_cb)   
 
         if is_left_cam:
             self.subs['cameraL_image'] = Subscriber(self.topic_wrap('/ambf/env/cameras/cameraL/ImageData'), numpy_msg(Image), self._cameraL_image_cb)
@@ -639,7 +639,7 @@ class ECMClient(BaseClient):
         """
         ros callback
         """
-        self.set_signal('camera_frame_state',self._TransformStamped2T(data))
+        self.set_signal('camera_frame_state', PoseStamped2T(data))
 
 
 class SceneClient(BaseClient):

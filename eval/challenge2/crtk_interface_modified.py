@@ -4,9 +4,12 @@ import time
 import rospy
 from std_msgs.msg import Bool
 from argparse import ArgumentParser
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, PoseStamped
 # from accel_challenge.challenge2.tool import TransformStamped2T
 from sensor_msgs.msg import JointState
+from rospy import Subscriber
+from accel_challenge.challenge2.tool import PoseStamped2T, T2RPY
+
 
 class PSMCRTKWrapperModified(PSMCRTKWrapper):
     def __init__(self, client, name, namespace, add_joint_errors=False):
@@ -39,6 +42,26 @@ class PSMCRTKWrapperModified(PSMCRTKWrapper):
         self.publish_gripper()
 
 
+class SceneCRTKWrapperModified(SceneCRTKWrapper):
+    def __init__(self, client, namespace):
+        super().__init__(client, namespace)
+        self.sub_needle_cp = Subscriber('/CRTK/Needle/servo_cp', PoseStamped, self._sub_needle_cp_cb)
+        self.sub_needle_zero_force = Subscriber('/CRTK/Needle/zero_force', Bool, self._sub_zero_force_cb)
+
+    def _sub_needle_cp_cb(self, data):
+        pos, rpy = T2RPY(PoseStamped2T(data))
+        _handle = self.scene.client.get_obj_handle('Needle')
+        _handle.set_pos(*pos)
+        _handle.set_rpy(*rpy)
+        # print("get msg")
+        # _handle.set_force(0, 0, 0)
+        # _handle.set_torque(0, 0, 0)
+    def _sub_zero_force_cb(self, data):
+        if data.data:
+            _handle = self.scene.client.get_obj_handle('Needle')
+            _handle.set_force(0, 0, 0)
+            _handle.set_torque(0, 0, 0)
+
 class SceneManagerModified(SceneManager):
     def __init__(self, options):
         self.client = Client("ambf_surgical_sim_crtk_node")
@@ -63,7 +86,7 @@ class SceneManagerModified(SceneManager):
             self._components.append(ecm)
         if options.run_scene:
             print("Launching CRTK-ROS Interface for Scene ")
-            scene = SceneCRTKWrapper(self.client, options.namespace)
+            scene = SceneCRTKWrapperModified(self.client, options.namespace)
             self._components.append(scene)
 
         self._rate = rospy.Rate(options.rate)

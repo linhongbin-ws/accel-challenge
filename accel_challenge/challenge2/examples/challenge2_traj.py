@@ -1,51 +1,53 @@
-from asyncio import sleep
 from accel_challenge.challenge2.ros_client import ClientEngine
-import rospy
 from PyKDL import Frame, Rotation, Vector
 from accel_challenge.challenge2.tool import RPY2T, Quaternion2T
 from accel_challenge.challenge2.param import T_gt_n, T_hover_gt, NEEDLE_R, T_tip_n
 import time
 import numpy as np
-
 pi = np.pi
 
 
-engine = ClientEngine()
-engine.add_clients(['psm1', 'psm2','ecm', 'scene'])
-engine.start()
-
-# move_arm = 'psm1'
+# params
 move_arm = 'psm2'
-
 INTER_NUM = 50 # interpolate points number
 
-# engine.clients[move_arm].servo_tool_cp_local(RPY2T(*[0.06, 0.6, -1.0,   pi, 0, 1.57079]))
+# initial objects
+engine = ClientEngine()
+engine.add_clients(['psm1', 'psm2','ecm', 'scene', 'ambf'])
+engine.start()
 
-# while not rospy.is_shutdown():
-
-# engine.clients[move_arm].open_jaw()
 print("reset pose..")
 engine.clients[move_arm].reset_pose(walltime=None)
+engine.clients[move_arm].wait()
 time.sleep(1)
-T_n_w = engine.get_signal('scene', 'measured_needle_cp')
-#print("====needle w.r.t. world =====")
-#print(T_n_w)
 
-#============ move to hover pose for preparation
+# random needle position
+needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7317253877244148]
+needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
+# w = engine.clients['ambf'].client.get_world_handle()
+# w.reset_bodies()
+time.sleep(1)
+engine.clients['ambf'].set_needle_pose(needle_pos0, needle_rpy0)
+
+# measure meedle intial pose
+T_n_w0 = engine.get_signal('scene', 'measured_needle_cp')
+
+#============ logic of gripper rotational direction
 print("hover to needle..")
-_, _, _Y = engine.get_signal('scene', 'measured_needle_cp').M.GetRPY()
+_, _, _Y = T_n_w0.M.GetRPY()
 _offset_theta = pi/2
 _Y +=_offset_theta
 #print("Yaw angle :",  _Y*180/pi)
-
-# logic of gripper rotational direction
 if _Y > pi /2: # project to -pi to pi range
     _Y = _Y -pi
 elif _Y < -pi /2:
     _Y = _Y + pi
 grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0])
-T_g_w_dsr = Frame(grasp_R, engine.get_signal('scene', 'measured_needle_cp').p)
+T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
 
+
+
+#=========== move to hover pose
 T_g_w_dsr = T_hover_gt * T_g_w_dsr # desire tool pose
 T_HOVER_POSE = T_g_w_dsr
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 100)
@@ -79,6 +81,9 @@ time.sleep(1)
 #print("grasp needle..")
 engine.clients[move_arm].close_jaw()
 engine.clients[move_arm].wait()
+
+
+
 #============ lift needle
 time.sleep(0.5)
 #print("====")
@@ -98,7 +103,6 @@ T_g_w_dsr = None
 d =  np.abs((engine.get_signal('scene', 'measured_entry1_cp').p - engine.get_signal('scene', 'measured_exit1_cp').p).Norm())
 r = NEEDLE_R# needle radius
 theta = np.arcsin(d/2/r)
-
 # pivot frame
 Rx_pivot_w = (engine.get_signal('scene', 'measured_exit1_cp').p- engine.get_signal('scene', 'measured_entry1_cp').p)/d
 Rz_pivot_w = Vector(*[0,0,1])
@@ -111,11 +115,8 @@ T_pivot_w = Frame(Rotation(Rx_pivot_w, Ry_pivot_w, Rz_pivot_w), p_pivot_w)
 #print("r:", r,"  d:", d,"  theta: ",theta)
 #print("pivot frame is ",T_pivot_w)
 #print("needle frame is ",engine.get_signal('scene', 'measured_needle_cp'))
-
 # needle entry and exit frame
 TR_n_pivot = RPY2T(*[0,0,0,  -pi/2,0 ,0]) # Rotation Frame from pivot to needle base
-
-
 # needle insertion interpolte trajectory frames
 INSERTION_ITPL_NUM = 200
 T_tip_w_ITPL_lst = [T_pivot_w * RPY2T(*[0,0,0, 0,theta-2*theta/INSERTION_ITPL_NUM*i,0]) * RPY2T(*[0,0,-r, 0,0,0]) * TR_n_pivot
@@ -132,17 +133,14 @@ T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 time.sleep(2)
-
 #print("entry frame pos: ", T_NET_w.p)
 #print("entry frame pos: ", engine.get_signal('scene', 'measured_entry1_cp').p)
 #print("needle tip pos: ", (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p)
-
-
 #print("T_tip_n ", T_tip_n)
 #print("T_NEEDLE_GRASP ", T_NEEDLE_GRASP)
 
-print("insert..")
 #============ insert needle 
+print("insert..")
 T_tip_w_dsr_prv = T_tip_w_dsr
 for T_tip_w_dsr in T_tip_w_ITPL_lst:
     T_g_w_dsr = T_tip_w_dsr * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse() 
