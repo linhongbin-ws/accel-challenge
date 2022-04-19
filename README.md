@@ -37,6 +37,12 @@
     pip install -e .
     ```  
 
+- install GPU support for DLC
+  ```sh
+  conda install -c conda-forge cudnn=8.2 cudatoolkit=11.3 # for tensorflow 2.8
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ben/anaconda3/envs/accel_challenge/lib/ # everytime for init
+  ```
+
 ## Run
 
 - First modify the file `<package_path>\bash\user_var.sh`, there are several path variables. You need to modify according to your enviroment path.

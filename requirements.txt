@@ -6,6 +6,8 @@ sympy
 ros_numpy
 ruamel.yaml
 
+deeplabcut[gui]
+
 pyyaml
 rospy
 rospkg
