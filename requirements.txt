@@ -6,7 +6,7 @@ sympy
 ros_numpy
 ruamel.yaml
 
-deeplabcut[gui]
+deeplabcut[gui]==2.2.1
 
 pyyaml
 rospy

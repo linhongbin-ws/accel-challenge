@@ -15,13 +15,18 @@ from accel_challenge.challenge2.ros_client import ClientEngine
 from time import sleep
 import ros_numpy
 from accel_challenge.challenge2.tool import PointCloud2_2_xyzNimage, render_rgb_xyz
+import tensorflow as tf
 
 
 class DLC_Predictor():
-    def __init__(self) -> None:
+    def __init__(self, config_path) -> None:
         """ initialization is slow """
         # load config
-        config_path = join(PACKAGE_ROOT_PATH, "data","dlc_calibrate-dlc_calibrate-2022-01-24","config.yaml")
+        # config_path = join(PACKAGE_ROOT_PATH, "data","dlc_calibrate-dlc_calibrate-2022-01-24","config.yaml")
+        physical_devices = tf.config.list_physical_devices('GPU')
+        print(f"available device: {physical_devices}")
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        
         try:
             cfg = load_config(str(config_path))
             print(cfg)
@@ -33,7 +38,7 @@ class DLC_Predictor():
         shuffle =1
         trainingsetindex = 0
         trainFraction = cfg['TrainingFraction'][trainingsetindex]
-        modelfolder = join(cfg["project_path"], str(auxiliaryfunctions.GetModelFolder(trainFraction, shuffle, cfg)))
+        modelfolder = join(cfg["project_path"], str(auxiliaryfunctions.get_model_folder(trainFraction, shuffle, cfg)))
         # print(modelfolder)
         path_test_config = join(modelfolder, 'test' ,'pose_cfg.yaml')
         try:
@@ -98,16 +103,49 @@ class DLC_Predictor():
         # print(image.shape)
         # print(self.sess)
         pose = self.sess.run(self.pose_tensor, feed_dict={self.inputs: images.astype(float)})
-        print(pose)
-        pose_list = [[pose[i][0], pose[i][1], pose[i][2]] for i in range(int(pose.shape[0]/8))]
+        # print(pose)
+        pose_list = [(pose[i][0], pose[i][1], pose[i][2]) for i in range(int(pose.shape[0]/8))]
 
         if input_depth_xyz is None:
-            return np.array(pose_list)
+            return pose_list
+            # return np.array(pose_list)
+            return pose
         else:
             feature_xyz = [[input_depth_xyz[int(pose[i][0]),int(pose[i][1]),0],
                             input_depth_xyz[int(pose[i][0]),int(pose[i][1]),1], 
                             input_depth_xyz[int(pose[i][0]),int(pose[i][1]),2]] for i in range(len(pose_list))]
             return (np.array(pose_list), np.array(feature_xyz))
+    
+    def render(self, input_image_dir, annotes=None,circle_size=8):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from matplotlib.patches import Circle
+        import matplotlib.cbook as cbook
+
+
+        img = plt.imread(input_image_dir)
+
+        # # Make some example data
+        # x = np.random.rand(5)*img.shape[1]
+        # y = np.random.rand(5)*img.shape[0]
+
+        # Create a figure. Equal aspect so circles look circular
+        fig,ax = plt.subplots(1)
+        ax.grid(False)
+        ax.set_aspect('equal')
+
+        # Show the image
+        ax.imshow(img)
+
+        # Now, loop through coord arrays, and create a circle at each x,y pair
+        if not annotes is None:
+            for yy,xx, prob in annotes:
+                circ = Circle((xx,yy),circle_size)
+                ax.add_patch(circ)
+
+        # Show the image
+        plt.show()
+        
 
 
 
