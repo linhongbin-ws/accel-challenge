@@ -122,8 +122,9 @@ class DLC_Predictor():
         from matplotlib.patches import Circle
         import matplotlib.cbook as cbook
 
-
-        img = plt.imread(input_image_dir)
+        img = input_image_dir
+        if isinstance(input_image_dir,str):
+            img = plt.imread(input_image_dir)
 
         # # Make some example data
         # x = np.random.rand(5)*img.shape[1]
