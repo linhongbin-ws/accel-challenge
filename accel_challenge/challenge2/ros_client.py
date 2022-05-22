@@ -307,6 +307,9 @@ class PSMClient(BaseClient):
 
     reset_jnt_psm2 = [-0.5656515955924988, -0.15630173683166504, 1.3160043954849243, -2.2147457599639893, 0.8174221515655518,-1]
 
+    K_servo_jp = 0.001
+    Mag_servo_jp = 0.0001
+
     def __init__(self, ros_node,
                        arm_name:str):
 
@@ -457,8 +460,11 @@ class PSMClient(BaseClient):
 
                 if q_dsr is not None:
                     self._q_dsr = q_dsr
+                    q_msr = self.get_signal('measured_js')
+                    e = np.array(q_dsr) - np.array(q_msr)
+                    q_dsr_servo = q_dsr + np.clip(self.K_servo_jp * e, -self.Mag_servo_jp, self.Mag_servo_jp)
                     msg = JointState()
-                    msg.position = q_dsr
+                    msg.position = q_dsr_servo.tolist()
                     self.pubs['servo_jp'].publish(msg)
 
                     if self.is_update_marker:
