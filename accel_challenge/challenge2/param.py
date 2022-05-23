@@ -8,7 +8,11 @@ import numpy as np
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.02, 0,-0.058]))
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.02, 0,0.058]))
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.01, 0,0.05]))
-grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, 0.09]))
+
+# grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, 0.09]))
+
+grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, -0.005]))
+
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.02, 0.03,-0.058]))
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0,0,-0]))
 
@@ -22,10 +26,10 @@ T_hover_gt = RPY2T(0,0,0.3, 0, 0, 0)
 
 
 #==== suture task
-NEEDLE_R = 0.13 # needle radius
-# NEEDLE_R = 0.103 # needle radius
+# NEEDLE_R = 0.13 # needle radius
+NEEDLE_R = 0.103 # needle radius
 
-T_tip_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0.055,0.083,0])) # tip frame w.r.t. needle base frame 0.04,0.07,0.
+T_tip_n = Frame(Rotation.RPY(*[0, 0, np.deg2rad(-30)]), Vector(*[0.055,0.083,0])) # tip frame w.r.t. needle base frame 0.04,0.07,0.
 # T_tip_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0.04,0.08/3,0])) # tip frame w.r.t. needle base frame
 
 

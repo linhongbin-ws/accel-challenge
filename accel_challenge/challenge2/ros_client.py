@@ -22,6 +22,7 @@ from ambf_msgs.msg import RigidBodyState, CameraState
 from accel_challenge.challenge2.tool import Quaternion2T, RPY2T, gen_interpolate_frames, SE3_2_T, T_2_SE3, RigidBodyState2T, PoseStamped2T
 from accel_challenge.challenge2.param import grasp_point_offset
 from accel_challenge.challenge2.kinematics import PSM_KIN
+from surgical_robotics_challenge.kinematics.psmIK import compute_IK
 
 
 class ClientEngine():
@@ -426,10 +427,15 @@ class PSMClient(BaseClient):
     def get_T_g_w_from_js(self, qs):
         return self.get_signal('measured_base_cp') * SE3_2_T(self.kin.fk(qs)) * self.grasp_point_offset
 
-    def ik_local(self, T_g_b, q0=None):
-        if q0 is None:
-            q0 = self.get_signal('measured_js')
-        q_dsr, is_success = self.kin.ik(T_2_SE3(T_g_b), q0)
+    def ik_local(self, T_g_b, q0=None, ik_engine='surgical_challenge'):
+        if ik_engine == 'peter_corke':
+            if q0 is None:
+                q0 = self.get_signal('measured_js')
+            q_dsr, is_success = self.kin.ik(T_2_SE3(T_g_b), q0)
+        
+        elif ik_engine == 'surgical_challenge':
+            q_dsr = compute_IK(T_g_b)
+            is_success = True
         return q_dsr, is_success
 
     def ik(self, T_g_w, q0=None):

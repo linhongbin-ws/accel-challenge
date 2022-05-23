@@ -17,8 +17,7 @@ class PSM_KIN():
         self.L_rcc = 4.389  # From dVRK documentation x 10
         self.L_tool = 4.16  # From dVRK documentation x 10
         self.L_pitch2yaw = 0.09  # Fixed length from the palm joint to the pinch joint
-        # self.L_yaw2ctrlpnt = 0.106  # Fixed length from the pinch joint to the pinch tip
-        self.L_yaw2ctrlpnt = 0.005  # Fixed length from the pinch joint to the pinch tip
+        self.L_yaw2ctrlpnt = 0.106  # Fixed length from the pinch joint to the pinch tip
         # Delta between tool tip and the Remote Center of Motion
         self.L_tool2rcm_offset = 0.229
 
