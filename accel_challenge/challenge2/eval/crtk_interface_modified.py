@@ -53,7 +53,7 @@ class SceneCRTKWrapperModified(SceneCRTKWrapper):
         _handle = self.scene.client.get_obj_handle('Needle')
         _handle.set_pos(*pos)
         _handle.set_rpy(*rpy)
-        # print("get msg")
+        print("get msg needle cp")
         # _handle.set_force(0, 0, 0)
         # _handle.set_torque(0, 0, 0)
     def _sub_zero_force_cb(self, data):
@@ -61,6 +61,7 @@ class SceneCRTKWrapperModified(SceneCRTKWrapper):
             _handle = self.scene.client.get_obj_handle('Needle')
             _handle.set_force(0, 0, 0)
             _handle.set_torque(0, 0, 0)
+            print("get msg needle zero force")
 
 class SceneManagerModified(SceneManager):
     def __init__(self, options):

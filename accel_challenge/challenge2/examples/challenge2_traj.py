@@ -1,12 +1,15 @@
 from accel_challenge.challenge2.ros_client import ClientEngine
 from PyKDL import Frame, Rotation, Vector
-from accel_challenge.challenge2.tool import RPY2T, Quaternion2T, SE3_2_T
+from accel_challenge.challenge2.tool import RPY2T, Quaternion2T, SE3_2_T, T2PoseStamped
 from accel_challenge.challenge2.param import T_gt_n, T_hover_gt, NEEDLE_R, T_tip_n
 from accel_challenge.challenge2.examples.calibrate import set_error
 import time
 import numpy as np
 pi = np.pi
 
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Bool
+import rospy
 
 
 # params
@@ -16,7 +19,7 @@ INTER_NUM = 50 # interpolate points number
 
 # initial objects
 engine = ClientEngine()
-engine.add_clients(['psm1', 'psm2','ecm', 'scene', 'ambf'])
+engine.add_clients(['psm1', 'psm2','ecm', 'scene'])
 engine.start()
 
 print("reset pose..")
@@ -25,16 +28,34 @@ engine.clients[move_arm].wait()
 time.sleep(0.3)
 
 # random needle position
-needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7317253877244148]
+needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped)
+needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool)
+rate = rospy.Rate(100)
+needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7517253877244148]
 needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
+time.sleep(1)
+for i in range(2):
+    msg = T2PoseStamped(RPY2T(*needle_pos0, *needle_rpy0))
+    needle_pub.publish(msg)
+    rate.sleep()
+time.sleep(1)
+for i in range(2):
+    msg = Bool()
+    msg.data = True
+    needle_zero_force_pub.publish(msg)
+    rate.sleep()
+time.sleep(1)
+
 # w = engine.clients['ambf'].client.get_world_handle()
 # w.reset_bodies()
+time.sleep(1)
+# engine.clients['ambf'].reset_all()
 # time.sleep(1)
 # engine.clients['ambf'].set_needle_pose(needle_pos0, needle_rpy0)
-
 # measure meedle intial pose
 T_n_w0 = engine.get_signal('scene', 'measured_needle_cp')
-
+print("needle initial p", T_n_w0.p)
+print("needle initial rpy", T_n_w0.M.GetRPY())
 #============ logic of gripper rotational direction
 print("hover to needle..")
 _, _, _Y = T_n_w0.M.GetRPY()
