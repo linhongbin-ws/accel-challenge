@@ -10,6 +10,9 @@ pi = np.pi
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 import rospy
+from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
+
+
 
 
 # params
@@ -27,12 +30,16 @@ engine.clients[move_arm].reset_pose(walltime=None)
 engine.clients[move_arm].wait()
 time.sleep(0.3)
 
+team_name = 'cuhk'
+task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+team_name+'/task2', Bool)
+
 # random needle position
 needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped)
 needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool)
 rate = rospy.Rate(100)
 needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7517253877244148]
-needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
+# needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
+needle_rpy0 = [0.03031654271074325, 0.029994510295635185, np.deg2rad(-180)]
 time.sleep(1)
 for i in range(2):
     msg = T2PoseStamped(RPY2T(*needle_pos0, *needle_rpy0))
@@ -164,6 +171,7 @@ T_ENTRY = engine.get_signal('scene', 'measured_entry1_cp')
 T_EXIT = engine.get_signal('scene', 'measured_exit1_cp')
 
 #============= some calculation for suture
+alpha = np.deg2rad(35)  # 5mm tip must be seen after penetrating exit hole
 d =  (T_ENTRY.p - T_EXIT.p).Norm()
 r = NEEDLE_R# needle radius
 theta = np.arcsin(d/2/r)
@@ -182,8 +190,10 @@ T_pivot_w = Frame(Rotation(Rx_pivot_w, Ry_pivot_w, Rz_pivot_w), p_pivot_w)
 TR_n_pivot = RPY2T(*[0,0,0,  -pi/2,0 ,0]) # Rotation Frame from pivot to needle base
 # needle insertion interpolte trajectory frames
 INSERTION_ITPL_NUM = 400
-T_tip_w_ITPL_lst = [T_pivot_w * RPY2T(*[0,0,0, 0,theta-2*theta/INSERTION_ITPL_NUM*i,0]) * RPY2T(*[0,0,-r, 0,0,0]) * TR_n_pivot
-                        for i in range(INSERTION_ITPL_NUM+1)] # interpolate frame from T_NET_w to T_NEX_w
+
+theta_list = np.linspace(theta, -theta-alpha, INSERTION_ITPL_NUM).tolist()
+T_tip_w_ITPL_lst = [T_pivot_w * RPY2T(*[0,0,0, 0,theta,0]) * RPY2T(*[0,0,-r, 0,0,0]) * TR_n_pivot
+                        for theta in theta_list] # interpolate frame from T_NET_w to T_NEX_w
 T_NET_w = T_tip_w_ITPL_lst[0]# needle entry frame
 T_NEX_w = T_tip_w_ITPL_lst[-1]# needle exit frame
 
@@ -272,6 +282,21 @@ print("T error", (_T_msr.p-_T_dsr2.p).Norm())
 print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
 
 print("theta:", theta/pi*180)
+
+
+# reporter = TaskCompletionReport(team_name='cuhk')
+# msg = Bool()
+# msg.data = True
+# for i in range(2):
+#     reporter.task_2_report(msg)
+
+for _ in range(2):
+    msg = Bool()
+    msg.data = True
+    task_pub.publish(msg)
+    rate.sleep()
+
+time.sleep(3)
 engine.clients[move_arm].open_jaw()
 engine.clients[move_arm].wait()
 

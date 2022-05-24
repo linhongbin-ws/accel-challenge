@@ -310,7 +310,8 @@ class PSMClient(BaseClient):
 
     reset_jnt_psm2 = [-0.5656515955924988, -0.15630173683166504, 1.3160043954849243, -2.2147457599639893, 0.8174221515655518,-1]
 
-    Kp_servo_jp = 0.5
+    # Kp_servo_jp = 0.5
+    Kp_servo_jp = 0.01
     Kv_servo_jp = 0
     Ki_servo_jp = 1
     Mag_servo_jp = 0.15
