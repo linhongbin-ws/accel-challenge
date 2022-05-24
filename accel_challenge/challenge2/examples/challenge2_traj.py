@@ -17,13 +17,17 @@ from surgical_robotics_challenge.task_completion_report import TaskCompletionRep
 
 # params
 move_arm = 'psm2'
-set_error(move_arm, [0,0,0,0,0,0])
+joint_calibrate_offset = np.array([-0.1,-0.1,0,0,0,0])
+set_error(move_arm, joint_calibrate_offset.tolist())
 INTER_NUM = 50 # interpolate points number
 
 # initial objects
 engine = ClientEngine()
 engine.add_clients(['psm1', 'psm2','ecm', 'scene'])
 engine.start()
+
+# joint_calibrate_offset[0] = -0.2
+engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
 
 print("reset pose..")
 engine.clients[move_arm].reset_pose(walltime=None)

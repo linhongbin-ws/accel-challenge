@@ -12,7 +12,7 @@ from accel_challenge.challenge2.tool import PoseStamped2T, T2RPY
 
 
 class PSMCRTKWrapperModified(PSMCRTKWrapper):
-    def __init__(self, client, name, namespace, add_joint_errors=False):
+    def __init__(self, client, name, namespace, add_joint_errors=True):
         super(PSMCRTKWrapperModified, self).__init__(client, name, namespace)
         if not add_joint_errors:
             self.arm = PSM(client, name, add_joint_errors=False)

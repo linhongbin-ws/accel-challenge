@@ -355,6 +355,8 @@ class PSMClient(BaseClient):
                          output_limits=(-self.Mag_servo_jp, self.Mag_servo_jp),
                          sample_time=0.01) for _ in range(6)]
 
+        self.joint_calibrate_offset = np.array([0,0,0, 0,0,0])
+
 
     def reset_pose(self, q_dsr=None, walltime=None):
         if self.arm_name == 'psm2':
@@ -492,7 +494,7 @@ class PSMClient(BaseClient):
                 
                 q_delta = [-self.pids[i](e[i]) for i in range(6)]
                 q_delta = np.array(q_delta)
-                q_dsr_servo = q_dsr + q_delta
+                q_dsr_servo = q_dsr + q_delta - self.joint_calibrate_offset
                 msg = JointState()
                 msg.position = q_dsr_servo.tolist()
                 self.pubs['servo_jp'].publish(msg)
@@ -547,7 +549,8 @@ class PSMClient(BaseClient):
     #     self.set_signal('measured_tool_cp_local', _T)
     def _measured_js_cb(self, data):
         pos = data.position
-        self.set_signal('measured_js', list(pos))
+        _pos = np.array(pos) + self.joint_calibrate_offset
+        self.set_signal('measured_js', _pos.tolist())
 
 
     def _is_grasp_cb(self, data):
