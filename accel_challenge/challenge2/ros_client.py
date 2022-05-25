@@ -311,10 +311,23 @@ class PSMClient(BaseClient):
     reset_jnt_psm2 = [-0.5656515955924988, -0.15630173683166504, 1.3160043954849243, -2.2147457599639893, 0.8174221515655518,-1]
 
     # Kp_servo_jp = 0.5
-    Kp_servo_jp = 0.01
-    Kv_servo_jp = 0
-    Ki_servo_jp = 1
-    Mag_servo_jp = 0.15
+    # Kp_servo_jp = 0.05
+
+    # Kp_servo_jp = 0.1
+    # Kv_servo_jp = 0
+    # Ki_servo_jp = 0.6
+
+
+    # Kp_servo_jp = 0.4
+    # Kv_servo_jp = 0
+    # Ki_servo_jp = 1.5
+    
+    Kp_servo_jp_list = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+    Kv_servo_jp_list = [0,   0,     0,   0,   0,   0]
+    # Ki_servo_jp_list = [10, 10, 10, 10, 10, 20]
+    Ki_servo_jp_list = [10, 10, 10, 10, 10, 10]
+
+    Mag_servo_jp = 2
     # de_fil_ratio_servo_jp = 0.99
 
     def __init__(self, ros_node,
@@ -323,7 +336,8 @@ class PSMClient(BaseClient):
         super(PSMClient, self).__init__(ros_node, is_run_thread=True)
         if arm_name not in self.arm_names:
             raise Exception(f"arm name should be in {self.arm_names}")
-        
+
+        self.joint_calibrate_offset = np.array([0,0,0, 0,0,0])
         self.arm_name = arm_name
         self.grasp_point_offset = grasp_point_offset
 
@@ -348,14 +362,14 @@ class PSMClient(BaseClient):
 
         # self.e_prv = None
         # self.de_fil = None
-        self.pids = [PID(self.Kp_servo_jp, 
-                         self.Ki_servo_jp, 
-                         self.Kv_servo_jp, 
+        self.pids = [PID(self.Kp_servo_jp_list[i], 
+                         self.Ki_servo_jp_list[i], 
+                         self.Kv_servo_jp_list[i], 
                          setpoint=0, 
                          output_limits=(-self.Mag_servo_jp, self.Mag_servo_jp),
-                         sample_time=0.01) for _ in range(6)]
+                         sample_time=0.01) for i in range(6)]
 
-        self.joint_calibrate_offset = np.array([0,0,0, 0,0,0])
+
 
 
     def reset_pose(self, q_dsr=None, walltime=None):
@@ -482,27 +496,29 @@ class PSMClient(BaseClient):
 
                 if q_dsr is not None:
                     self._q_dsr = q_dsr
-                if self._q_dsr is None:
-                    self._q_dsr = self.get_signal('measured_js')
-                q_msr = self.get_signal('measured_js')
-                e = np.array(q_dsr) - np.array(q_msr)
-                # e_prv = e if self.e_prv is None else self.e_prv
-                # de = (e - e_prv)/0.01 # de = delta /dt
-                # self.de_fil = de if self.de_fil is None else de * self.de_fil_ratio_servo_jp + self.de_fil * (1 - self.de_fil_ratio_servo_jp)
-                # q_delta = self.Kp_servo_jp * e + self.Kv_servo_jp * self.de_fil
-                # q_delta = np.clip(q_delta, -self.Mag_servo_jp, self.Mag_servo_jp)
-                
-                q_delta = [-self.pids[i](e[i]) for i in range(6)]
-                q_delta = np.array(q_delta)
-                q_dsr_servo = q_dsr + q_delta - self.joint_calibrate_offset
-                msg = JointState()
-                msg.position = q_dsr_servo.tolist()
-                self.pubs['servo_jp'].publish(msg)
+            if self._q_dsr is None:
+                self._q_dsr = self.get_signal('measured_js')
+
+            q_msr = self.get_signal('measured_js')
+            e = np.array(self._q_dsr) - np.array(q_msr)
+            # e_prv = e if self.e_prv is None else self.e_prv
+            # de = (e - e_prv)/0.01 # de = delta /dt
+            # self.de_fil = de if self.de_fil is None else de * self.de_fil_ratio_servo_jp + self.de_fil * (1 - self.de_fil_ratio_servo_jp)
+            # q_delta = self.Kp_servo_jp * e + self.Kv_servo_jp * self.de_fil
+            # q_delta = np.clip(q_delta, -self.Mag_servo_jp, self.Mag_servo_jp)
+            
+            q_delta = [-self.pids[i](e[i]) for i in range(6)]
+            q_delta = np.array(q_delta)
+            # print(q_delta)
+            q_dsr_servo = self._q_dsr + q_delta - self.joint_calibrate_offset
+            msg = JointState()
+            msg.position = q_dsr_servo.tolist()
+            self.pubs['servo_jp'].publish(msg)
                 # self.e_prv = e
 
-                if self.is_update_marker:
-                    msg = self._T2TransformStamped(self.get_signal('measured_base_cp') * SE3_2_T(self.kin.fk(q_dsr)) * self.grasp_point_offset)
-                    self.pubs["servo_marker_cp"].publish(msg)
+                # if self.is_update_marker:
+                #     msg = self._T2TransformStamped(self.get_signal('measured_base_cp') * SE3_2_T(self.kin.fk(q_dsr)) * self.grasp_point_offset)
+                #     self.pubs["servo_marker_cp"].publish(msg)
 
 
             if not self._jaw_pub_queue.empty():

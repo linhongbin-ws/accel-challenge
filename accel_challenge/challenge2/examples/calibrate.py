@@ -93,6 +93,41 @@ def set_error(arm_name, data):
         # print(msg)
         rate.sleep()
 
+def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
+    models = {}
+    from tensorflow.keras.models import load_model
+    models['dlc_predictor'] = DLC_Predictor(load_dict['dlc_config_path'])
+    models['keras_model'] = load_model(load_dict['keras_model_path'])
+    scalers =  pickle.load(open(load_dict['scalers_path'],'rb'))
+    models['input_scaler'] = scalers['input_scaler']
+    models['output_scaler'] = scalers['output_scaler']
+    print(models)
+    _engine.clients[arm_name].reset_pose()
+    _engine.clients[arm_name].wait()
+    T_cam_w = _engine.get_signal('ecm','camera_frame_state')
+    # print("cam frame:",  np.rad2deg(T_cam_w.M.GetRPY()))
+    Cam_Roll = T_cam_w.M.GetRPY()[0]
+    x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
+    pose_origin = RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,+Cam_Roll-pi/2])
+    _engine.clients[arm_name].servo_tool_cp(pose_origin,300)
+    _engine.clients[arm_name].wait()
+    time.sleep(3)
+    q = engine.clients[arm_name].get_signal('measured_js')
+    print("q error", np.array(q) - np.array(engine.clients[arm_name]._q_dsr))
+    print(engine.clients[arm_name].kin.is_out_qlim(q))
+    print("psm dsr",  _engine.clients[arm_name].T_g_w_dsr.p)
+    print("psm msr",  _engine.clients[arm_name].T_g_w_msr.p)
+    print("error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
+    print("engine error set", _engine.clients[arm_name].joint_calibrate_offset)
+    data = {}
+    data['image'] = _engine.get_signal('ecm','cameraL_image')
+    data['feature'] =  models['dlc_predictor'].predict(data['image'])
+    data['feature'] = np.array([np.array(data['feature']).reshape(-1)])
+    data['err_pred'] = models['keras_model'].predict(models['input_scaler'].transform(data['feature']))
+    data['err_pred'] = models['output_scaler'].inverse_transform(data['err_pred'])
+    return data['err_pred'].reshape(-1)
+
+
 def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_name='psm2', is_predict=False):
     if not load_dict is None: 
         models = {}
@@ -325,7 +360,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', required=True, type=int) # program type, 1 for recording, 2 for trajectory
     args, remaining = parser.parse_known_args()
-    assert args.p in [1, 2, 3, 4, 5,6,7,8,9,10]
+    assert args.p in [1, 2, 3, 4, 5,6,7,8,9,10,11]
     is_no_engine = args.p in [7,8,9]
 
     #======init variables
@@ -376,7 +411,18 @@ if __name__ == '__main__':
                     'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
                     'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
         joint_error_test(seed=ONLINE_TEST_TRAJ_SEED, _engine=engine, 
-        load_dict=load_dict)
+        load_dict=load_dict, is_predict=True)
+    
+    elif args.p == 11:
+        # set_error('psm2', [0.1,0.1, 0.05, 0,0,0])
+        set_error('psm2', [0,0, 0, 0,0,0])
+        load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
+                    'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
+                    'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
+        error = calibrate_joint_error(_engine=engine, 
+                              load_dict=load_dict,  arm_name='psm2')
+        print("predict error:", error)
+        print("predict error deg:", np.rad2deg(error))
         # dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=TEST_IMAGE_FILE_DIR)
     # print("ctrl c to stop")
     # spin()

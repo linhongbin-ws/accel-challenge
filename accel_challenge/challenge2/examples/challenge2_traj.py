@@ -267,7 +267,7 @@ for T_tip_w_dsr in T_tip_w_ITPL_lst:
     # engine.clients[move_arm].wait()
     msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
     dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
-    print("needle error:", (msr-dsr).Norm())
+    # print("needle error:", (msr-dsr).Norm())
 
 engine.clients[move_arm].wait()
 time.sleep(1)
