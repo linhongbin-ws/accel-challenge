@@ -112,9 +112,9 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     _engine.clients[arm_name].servo_tool_cp(pose_origin,300)
     _engine.clients[arm_name].wait()
     time.sleep(3)
-    q = engine.clients[arm_name].get_signal('measured_js')
-    print("q error", np.array(q) - np.array(engine.clients[arm_name]._q_dsr))
-    print(engine.clients[arm_name].kin.is_out_qlim(q))
+    q = _engine.clients[arm_name].get_signal('measured_js')
+    print("q error", np.array(q) - np.array(_engine.clients[arm_name]._q_dsr))
+    print(_engine.clients[arm_name].kin.is_out_qlim(q))
     print("psm dsr",  _engine.clients[arm_name].T_g_w_dsr.p)
     print("psm msr",  _engine.clients[arm_name].T_g_w_msr.p)
     print("error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
@@ -183,10 +183,11 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
             pub_error(_error)
             print("                                                  ",end='\r')
             print(f'num:{num} error: {_error}, ctrl+c to stop', end='\r')
-            sleep(0.5)
-        _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
+            sleep(0.8)
+        _engine.clients[arm_name].servo_tool_cp(pose_origin,200)
         _engine.clients[arm_name].wait()
-        sleep(0.5)
+        sleep(1.4)
+        print("T error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
 
         if (not load_dict is None) and is_predict:
             data = {}
@@ -315,11 +316,12 @@ def train_mlp(train_data_dir, test_data_dir, save_model_dir):
     history = model.fit(train_data[2], train_data[3], validation_split = 0.2, epochs = 1000, verbose = 2, callbacks=callbacks)
     # print(model.predict(test_data[2]))
     test_pred = model.predict(test_data[2])
-    test_pred_err = np.abs(test_data[5].inverse_transform(test_pred-test_data[3])[:3])
+    test_pred_err = np.abs(test_data[5].inverse_transform(test_pred)-test_data[1])
     print(f"test error mean: {np.mean(test_pred_err)}, std:{np.std(test_pred_err)} ")
+    print(f"test error mean (Deg): {np.rad2deg(np.mean(test_pred_err))}, std:{np.rad2deg(np.std(test_pred_err))} ")
 
     scaler_load = pickle.load(open(str(Path(save_model_dir) / 'scalers.pkl'),'rb'))
-    print(scaler_load['input_scaler'].mean_)
+    # print(scaler_load['input_scaler'].mean_)
 
     # plt.plot(history.history['acc'])
     # plt.plot(history.history['val_acc'])
@@ -414,15 +416,16 @@ if __name__ == '__main__':
         load_dict=load_dict, is_predict=True)
     
     elif args.p == 11:
-        # set_error('psm2', [0.1,0.1, 0.05, 0,0,0])
-        set_error('psm2', [0,0, 0, 0,0,0])
+        error_gt = np.deg2rad([1, 2, 0, 0 ,0, 0])
+        set_error('psm2', error_gt.tolist())
+        # set_error('psm2', [0,0, 0, 0,0,0])
         load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
                     'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
                     'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
         error = calibrate_joint_error(_engine=engine, 
                               load_dict=load_dict,  arm_name='psm2')
-        print("predict error:", error)
-        print("predict error deg:", np.rad2deg(error))
+        print("predict error (value)  (ground truth error):", error, error - error_gt[:3])
+        print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - error_gt[:3]))
         # dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=TEST_IMAGE_FILE_DIR)
     # print("ctrl c to stop")
     # spin()

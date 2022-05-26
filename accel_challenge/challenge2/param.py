@@ -11,7 +11,9 @@ import numpy as np
 
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, 0.09]))
 
-grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, -0.005]))
+# grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, -0.005]))
+
+grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, -0.008]))
 
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.02, 0.03,-0.058]))
 # grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0,0,-0]))

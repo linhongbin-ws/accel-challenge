@@ -5,6 +5,7 @@ spatialmath-python
 sympy
 ros_numpy
 ruamel.yaml
+pathlib
 
 deeplabcut[gui]==2.2.1
 
