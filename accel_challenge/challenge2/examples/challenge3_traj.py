@@ -188,8 +188,10 @@ for i in range(4):
     #=== handover
     T_gt_n_PSM2 =  T_gt_n * RPY2T(*[0,0,0, -pi,0, -pi/2])
     T_g_w_dsr_PSM2 = engine.clients['psm1'].T_g_w_msr * T_NEEDLE_GRASP_PSM1 * T_gt_n_PSM2
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2*RPY2T(0,0,-0.04,0,0,0), 200)
     engine.clients['psm2'].open_jaw()
+    engine.clients['psm2'].wait()
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
     engine.clients['psm2'].wait()
     time.sleep(1)
     T_NEEDLE_GRASP_PSM2 = T_gt_n_PSM2.Inverse()
