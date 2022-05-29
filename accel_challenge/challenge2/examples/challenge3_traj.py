@@ -51,8 +51,8 @@ engine.add_clients(['psm1', 'psm2', 'ecm', 'scene'])
 engine.start()
 # joint_calibrate_offset[0] = -0.2
 print("reset pose..")
-engine.clients['psm1'].grasp_point_offset = RPY2T(*[0,0, -0.02, 0,0,0])
-engine.clients['psm2'].grasp_point_offset = RPY2T(*[0,0, -0.011, 0,0,0])
+engine.clients['psm1'].grasp_point_offset = RPY2T(*[0,0, -0.030, 0,0,0])
+engine.clients['psm2'].grasp_point_offset = RPY2T(*[0,0, -0.030, 0,0,0])
 engine.clients['psm1'].reset_pose()
 engine.clients['psm1'].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
@@ -67,7 +67,7 @@ set_error('psm1', joint_calibrate_offset_gt.tolist())
 set_error('psm2', joint_calibrate_offset_gt.tolist())
 time.sleep(2)
 T_n_w0 = engine.get_signal('scene', 'measured_needle_cp')
-T_NEEDLE_GRASP_PSM2 = engine.clients['psm2'].T_g_w_dsr.Inverse() * T_n_w0 # needle base pose w.r.t. gripper point
+T_NEEDLE_GRASP_PSM2 = engine.clients['psm2'].T_g_w_msr.Inverse() * T_n_w0 # needle base pose w.r.t. gripper point
 
 for i in range(4):
 
@@ -75,7 +75,7 @@ for i in range(4):
     T_ENTRY = engine.get_signal('scene', "measured_entry{}_cp".format(i+1)) 
     T_EXIT = engine.get_signal('scene', "measured_exit{}_cp".format(i+1))
     # alpha = np.deg2rad(35)  # 5mm tip must be seen after penetrating exit hole
-    alpha = np.deg2rad(25)  # 5mm tip must be seen after penetrating exit hole
+    alpha = np.deg2rad(30)  # 5mm tip must be seen after penetrating exit hole
     beta = np.deg2rad(140) # angle to extract needle
     d =  (T_ENTRY.p - T_EXIT.p).Norm()
     r = NEEDLE_R# needle radius
@@ -136,7 +136,7 @@ for i in range(4):
         # #print(type(T_g_w_dsr_PSM2))
         engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, interpolate_num=None, clear_queue=False)
     engine.clients['psm2'].wait()
-    time.sleep(1)
+    time.sleep(2)
     # print("exit frame pos: ", T_NEX_w.p)
     # print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
     # _T_dsr = T_g_w_dsr_PSM2
@@ -150,18 +150,21 @@ for i in range(4):
 
 
     #==== left arm extract needle
-    T_gt_n_PSM1 = RPY2T(*[0.055,0.083,0, 0,0,0]) * RPY2T(*[0,0,0, -pi,0,0]) # tip frame w.r.t. needle base frame 0.04,0.07,0.
+    T_gt_n_PSM1 = RPY2T(*[0.015,0.103,0, 0,0,0]) * RPY2T(*[0,0,0, -pi,0, np.deg2rad(10)]) # tip frame w.r.t. needle base frame 0.04,0.07,0.
     T_g_w_dsr_PSM1 = engine.clients['psm2'].T_g_w_msr * T_NEEDLE_GRASP_PSM2 * T_gt_n_PSM1 
-    T_NEEDLE_GRASP_PSM1 = T_g_w_dsr_PSM1.Inverse() * engine.clients['psm2'].T_g_w_msr * T_NEEDLE_GRASP_PSM2
     # print("needle dsr", T_tip_w_dsr.p)
     # print("needle msr", engine.get_signal('scene', 'measured_needle_cp').p)
+    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1*RPY2T(0,0,-0.08,0,0,0), 200)
     engine.clients['psm1'].open_jaw()
+    engine.clients['psm1'].wait()
+    time.sleep(2)
     engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, 200)
     engine.clients['psm1'].wait()
-    time.sleep(1)
+    time.sleep(2)
     engine.clients['psm1'].close_jaw()
     engine.clients['psm1'].wait()
     time.sleep(3)
+    T_NEEDLE_GRASP_PSM1 = engine.clients['psm1'].T_g_w_msr.Inverse() * engine.clients['psm2'].T_g_w_msr * T_NEEDLE_GRASP_PSM2
     engine.clients['psm2'].open_jaw()
     engine.clients['psm2'].wait()
     time.sleep(3)
@@ -188,16 +191,16 @@ for i in range(4):
     #=== handover
     T_gt_n_PSM2 =  T_gt_n * RPY2T(*[0,0,0, -pi,0, -pi/2])
     T_g_w_dsr_PSM2 = engine.clients['psm1'].T_g_w_msr * T_NEEDLE_GRASP_PSM1 * T_gt_n_PSM2
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2*RPY2T(0,0,-0.04,0,0,0), 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2*RPY2T(0,0,-0.09,0,0,0), 200)
     engine.clients['psm2'].open_jaw()
     engine.clients['psm2'].wait()
     engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
     engine.clients['psm2'].wait()
     time.sleep(1)
-    T_NEEDLE_GRASP_PSM2 = T_gt_n_PSM2.Inverse()
     engine.clients['psm2'].close_jaw()
     engine.clients['psm2'].wait()
     time.sleep(0.5)
+    T_NEEDLE_GRASP_PSM2 = engine.clients['psm2'].T_g_w_msr.Inverse() * engine.clients['psm1'].T_g_w_msr * T_NEEDLE_GRASP_PSM1
     engine.clients['psm1'].open_jaw()
     engine.clients['psm1'].wait()
     T_g_w_dsr_PSM2 = RPY2T(*[-0.1,0,0,0,0,0]) * T_g_w_dsr_PSM2 * RPY2T(*[0,0,0,0,0,-pi/4-pi/2]) 
