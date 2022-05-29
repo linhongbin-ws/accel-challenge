@@ -84,15 +84,11 @@ def set_error(arm_name, data):
     from sensor_msgs.msg import ChannelFloat32
     init_node('ros_client_engine',anonymous=True)
     error_pub = Publisher('/ambf/env/' + arm_name + '/errors_model/set_errors', ChannelFloat32)
-    rate = Rate(100)
     sleep(0.5) # wait a bit to initialize publisher 
     msg = ChannelFloat32()
     msg.values = data
-    for i in range(2):
-        error_pub.publish(msg)
-        # print(msg)
-        rate.sleep()
-
+    error_pub.publish(msg)
+    sleep(0.2)
 def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     models = {}
     from tensorflow.keras.models import load_model
@@ -106,9 +102,12 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     _engine.clients[arm_name].wait()
     T_cam_w = _engine.get_signal('ecm','camera_frame_state')
     # print("cam frame:",  np.rad2deg(T_cam_w.M.GetRPY()))
-    Cam_Roll = T_cam_w.M.GetRPY()[0]
     x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
-    pose_origin = RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,+Cam_Roll-pi/2])
+    # Cam_Roll = T_cam_w.M.GetRPY()[0]
+    # YAW = Cam_Roll-pi/2
+    YAW = -0.8726640502948968
+    pose_origin = RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW])
+    print("Yaw is ", YAW)
     _engine.clients[arm_name].servo_tool_cp(pose_origin,300)
     _engine.clients[arm_name].wait()
     time.sleep(3)

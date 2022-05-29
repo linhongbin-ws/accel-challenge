@@ -28,6 +28,7 @@ load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
 
 #===self testing (comment when evaluation)
 joint_calibrate_offset_gt = np.array(np.deg2rad([1,2,0,0,0,0]))
+joint_calibrate_offset_gt[2] = 0.02
 # joint_calibrate_offset = np.array([0,0,0,0,0,0])
 print("setting error: ", joint_calibrate_offset_gt)
 set_error(move_arm, joint_calibrate_offset_gt.tolist())
@@ -115,7 +116,7 @@ T_g_w_dsr = None
 
 #============ approach needle
 print("approach needle..")
-T_target_w = engine.get_signal('scene', 'measured_needle_cp') * T_gt_n
+T_target_w = T_n_w0 * T_gt_n
 # T_target_w = engine.get_signal('scene', 'measured_needle_cp') * T_tip_n
 # grasp_R =T_tip_n.M *  grasp_R
 # T_target_w = engine.get_signal('scene', 'measured_needle_cp') * RPY2T(*[0,NEEDLE_R,0,0,0,0])
@@ -133,6 +134,7 @@ time.sleep(0.2)
 _T_dsr = T_g_w_dsr_prv
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
 print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+T_NEEDLE_GRASP = T_g_w_dsr_prv.Inverse() * T_n_w0 # needle base pose w.r.t. gripper point
 
 #============ grasp
 #print("====")
@@ -151,14 +153,13 @@ engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 300)
 engine.clients[move_arm].wait()
 #print(T_g_w_dsr)
 T_g_w_dsr_prv = T_g_w_dsr
-T_NEEDLE_GRASP = T_g_w_dsr_prv.Inverse() * engine.get_signal('scene', 'measured_needle_cp') # needle base pose w.r.t. gripper point
 T_g_w_dsr = None
 time.sleep(0.5)
-msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
-dsr = (T_g_w_dsr_prv*T_NEEDLE_GRASP*T_tip_n).p
-print("needle msr pos: ", msr)
-print("needle dsr pos: ", dsr)
-print("error:", (msr-dsr).Norm())
+# msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
+# dsr = (T_g_w_dsr_prv*T_NEEDLE_GRASP*T_tip_n).p
+# print("needle msr pos: ", msr)
+# print("needle dsr pos: ", dsr)
+# print("error:", (msr-dsr).Norm())
 T_g_w_dsr = T_g_w_dsr_prv
 _T_dsr = T_g_w_dsr_prv
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
@@ -255,11 +256,11 @@ T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 200)
 engine.clients[move_arm].wait()
 time.sleep(0.5)
-msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
-dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
-print("needle msr pos: ", msr)
-print("needle dsr pos: ", dsr)
-print("error:", (msr-dsr).Norm())
+# msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
+# dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
+# print("needle msr pos: ", msr)
+# print("needle dsr pos: ", dsr)
+# print("error:", (msr-dsr).Norm())
 _T_dsr = T_g_w_dsr
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
 _T_msr = engine.clients['psm2'].T_g_w_msr
@@ -277,18 +278,18 @@ for T_tip_w_dsr in T_tip_w_ITPL_lst:
     # #print(type(T_g_w_dsr))
     engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, interpolate_num=None, clear_queue=False)
     # engine.clients[move_arm].wait()
-    msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
-    dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
+    # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
+    # dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
     # print("needle error:", (msr-dsr).Norm())
 engine.clients[move_arm].wait()
 time.sleep(1)
 print("exit frame pos: ", T_NEX_w.p)
 print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
-msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
-dsr = (T_NEX_w*T_NEEDLE_GRASP*T_tip_n).p
-print("needle msr pos: ", msr)
-print("needle dsr pos: ", dsr)
-print("error:", (msr-dsr).Norm())
+# msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
+# dsr = (T_NEX_w*T_NEEDLE_GRASP*T_tip_n).p
+# print("needle msr pos: ", msr)
+# print("needle dsr pos: ", dsr)
+# print("error:", (msr-dsr).Norm())
 _T_dsr = T_g_w_dsr
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
 _T_msr = engine.clients['psm2'].T_g_w_msr

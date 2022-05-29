@@ -2,7 +2,7 @@ from surgical_robotics_challenge.launch_crtk_interface import Client, PSMCRTKWra
 from surgical_robotics_challenge.psm_arm import PSM
 import time
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Empty
 from argparse import ArgumentParser
 from geometry_msgs.msg import TransformStamped, PoseStamped
 # from accel_challenge.challenge2.tool import TransformStamped2T
@@ -71,24 +71,29 @@ class SceneManagerModified(SceneManager):
         self._components = []
         if options.run_psm_one is True:
             print("Launching CRTK-ROS Interface for PSM1 ")
-            psm1 = PSMCRTKWrapperModified(self.client, 'psm1', options.namespace)
-            self._components.append(psm1)
+            self.psm1 = PSMCRTKWrapperModified(self.client, 'psm1', options.namespace)
+            self._components.append(self.psm1)
         if options.run_psm_two is True:
             print("Launching CRTK-ROS Interface for PSM2 ")
-            psm2 = PSMCRTKWrapperModified(self.client, 'psm2', options.namespace)
-            self._components.append(psm2)
+            self.psm2 = PSMCRTKWrapperModified(self.client, 'psm2', options.namespace)
+            self._components.append(self.psm2)
         if options.run_psm_three is True:
             print("Launching CRTK-ROS Interface for PSM3 ")
-            psm3 = PSMCRTKWrapperModified(self.client, 'psm3', options.namespace)
-            self._components.append(psm3)
+            self.psm3 = PSMCRTKWrapperModified(self.client, 'psm3', options.namespace)
+            self._components.append(self.psm3)
         if options.run_ecm:
             print("Launching CRTK-ROS Interface for ECM ")
-            ecm = ECMCRTKWrapper(self.client, 'ecm', options.namespace)
-            self._components.append(ecm)
+            self.ecm = ECMCRTKWrapper(self.client, 'ecm', options.namespace)
+            self._components.append(self.ecm)
         if options.run_scene:
             print("Launching CRTK-ROS Interface for Scene ")
-            scene = SceneCRTKWrapperModified(self.client, options.namespace)
-            self._components.append(scene)
+            self.scene = SceneCRTKWrapperModified(self.client, options.namespace)
+            self._components.append(self.scene)
+
+        self._task_3_init_sub = rospy.Subscriber('/CRTK/scene/task_3_setup/init',
+                                                Empty, self.task_3_setup_cb, queue_size=1)
+
+        self._task_3_setup_reaady_pub = rospy.Publisher('/CRTK/scene/task_3_setup/ready', Empty, queue_size=1)
 
         self._rate = rospy.Rate(options.rate)
 

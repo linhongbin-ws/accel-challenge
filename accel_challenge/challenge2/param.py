@@ -32,6 +32,7 @@ T_hover_gt = RPY2T(0,0,0.3, 0, 0, 0)
 NEEDLE_R = 0.103 # needle radius
 
 T_tip_n = Frame(Rotation.RPY(*[0, 0, np.deg2rad(-30)]), Vector(*[0.055,0.083,0])) # tip frame w.r.t. needle base frame 0.04,0.07,0.
+T_tip_n_2 = Frame(Rotation.RPY(*[0, 0, np.deg2rad(-10)]), Vector(*[0.015,0.103,0])) # tip frame w.r.t. needle base frame 0.04,0.07,0.
 # T_tip_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0.04,0.08/3,0])) # tip frame w.r.t. needle base frame
 
 

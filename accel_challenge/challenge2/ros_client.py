@@ -309,7 +309,7 @@ class PSMClient(BaseClient):
     IK_MAX_NUM = 2
 
     reset_jnt_psm2 = [-0.5656515955924988, -0.15630173683166504, 1.3160043954849243, -2.2147457599639893, 0.8174221515655518,-1]
-
+    reset_jnt_psm1 = [0.2574930501388846, -0.2637599054454396, 1.490778072887017, -2.3705447576048746, 0.3589815573742414, -1.0241148122485695]
     # Kp_servo_jp = 0.5
     # Kp_servo_jp = 0.05
 
@@ -375,11 +375,12 @@ class PSMClient(BaseClient):
     def reset_pose(self, q_dsr=None, walltime=None):
         if self.arm_name == 'psm2':
             _q_dsr = q_dsr or self.reset_jnt_psm2
-            self.servo_jp(_q_dsr, interpolate_num=100)
-            self.open_jaw()
-            self.wait(walltime=walltime)
-        else:
-            raise NotImplementedError
+        elif self.arm_name == 'psm1':
+            _q_dsr = q_dsr or self.reset_jnt_psm1
+        self.servo_jp(_q_dsr, interpolate_num=100)
+        self.open_jaw()
+        self.wait(walltime=walltime)
+
     
     def wait(self, walltime=None, force_walltime=False):
         """ wait until the queues for joint angles and jaw to be zero"""
