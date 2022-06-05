@@ -26,30 +26,30 @@ load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
 
 
 
-#===self testing (comment when evaluation)
-joint_calibrate_offset_gt = np.array(np.deg2rad([1,2,0,0,0,0]))
-joint_calibrate_offset_gt[2] = 0.02
-# joint_calibrate_offset = np.array([0,0,0,0,0,0])
-print("setting error: ", joint_calibrate_offset_gt)
-set_error(move_arm, joint_calibrate_offset_gt.tolist())
-needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped)
-needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool)
-rate = rospy.Rate(100)
-needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7517253877244148]
-# needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
-needle_rpy0 = [0.03031654271074325, 0.029994510295635185, np.deg2rad(-180)]
-time.sleep(1)
-for i in range(2):
-    msg = T2PoseStamped(RPY2T(*needle_pos0, *needle_rpy0))
-    needle_pub.publish(msg)
-    rate.sleep()
-time.sleep(1)
-for i in range(2):
-    msg = Bool()
-    msg.data = True
-    needle_zero_force_pub.publish(msg)
-    rate.sleep()
-time.sleep(1)
+# #===self testing (comment when evaluation)
+# joint_calibrate_offset_gt = np.array(np.deg2rad([1,2,0,0,0,0]))
+# joint_calibrate_offset_gt[2] = 0.02
+# # joint_calibrate_offset = np.array([0,0,0,0,0,0])
+# print("setting error: ", joint_calibrate_offset_gt)
+# set_error(move_arm, joint_calibrate_offset_gt.tolist())
+# needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped)
+# needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool)
+# rate = rospy.Rate(100)
+# needle_pos0 = [-0.20786757338201337, 0.5619611862776279, 0.7517253877244148]
+# # needle_rpy0 = [0.03031654271074325, 0.029994510295635185, -0.00018838556827461113]
+# needle_rpy0 = [0.03031654271074325, 0.029994510295635185, np.deg2rad(-180)]
+# time.sleep(1)
+# for i in range(2):
+#     msg = T2PoseStamped(RPY2T(*needle_pos0, *needle_rpy0))
+#     needle_pub.publish(msg)
+#     rate.sleep()
+# time.sleep(1)
+# for i in range(2):
+#     msg = Bool()
+#     msg.data = True
+#     needle_zero_force_pub.publish(msg)
+#     rate.sleep()
+# time.sleep(1)
 
 
 #=== initial objects
@@ -61,7 +61,7 @@ print("reset pose..")
 engine.clients[move_arm].reset_pose(walltime=None)
 engine.clients[move_arm].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
-time.sleep(0.3)
+# time.sleep(0.3)
 task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+team_name+'/task2', Bool)
 
 
@@ -87,16 +87,16 @@ elif _Y < -pi /2:
 grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0]) 
 T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
 
-#===== calibration
-engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
-error = calibrate_joint_error(_engine=engine, 
-                        load_dict=load_dict,  arm_name=move_arm)
-# print("predict error deg  (value):", np.rad2deg(error))
-if 'joint_calibrate_offset_gt' in globals():
-    print("predict error (value)  (ground truth error):", error, error - joint_calibrate_offset_gt[:3])
-    print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - joint_calibrate_offset_gt[:3]))
-joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
-engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
+# #===== calibration
+# engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
+# error = calibrate_joint_error(_engine=engine, 
+#                         load_dict=load_dict,  arm_name=move_arm)
+# # print("predict error deg  (value):", np.rad2deg(error))
+# if 'joint_calibrate_offset_gt' in globals():
+#     print("predict error (value)  (ground truth error):", error, error - joint_calibrate_offset_gt[:3])
+#     print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - joint_calibrate_offset_gt[:3]))
+# joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
+# engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
 
 
 
@@ -105,7 +105,7 @@ T_g_w_dsr = T_hover_gt * T_g_w_dsr # desire tool pose
 T_HOVER_POSE = T_g_w_dsr
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 100)
 engine.clients[move_arm].wait()
-time.sleep(0.2)
+# time.sleep(0.2)
 T_g_w_dsr_prv = T_g_w_dsr
 T_g_w_dsr = None
 #print("====")
@@ -154,7 +154,7 @@ engine.clients[move_arm].wait()
 #print(T_g_w_dsr)
 T_g_w_dsr_prv = T_g_w_dsr
 T_g_w_dsr = None
-time.sleep(0.5)
+# time.sleep(0.5)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
 # dsr = (T_g_w_dsr_prv*T_NEEDLE_GRASP*T_tip_n).p
 # print("needle msr pos: ", msr)
@@ -255,7 +255,7 @@ T_tip_w_dsr = T_NET_w
 T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 200)
 engine.clients[move_arm].wait()
-time.sleep(0.5)
+time.sleep(0.2)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
 # dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
 # print("needle msr pos: ", msr)
@@ -282,7 +282,7 @@ for T_tip_w_dsr in T_tip_w_ITPL_lst:
     # dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
     # print("needle error:", (msr-dsr).Norm())
 engine.clients[move_arm].wait()
-time.sleep(1)
+time.sleep(0.1)
 print("exit frame pos: ", T_NEX_w.p)
 print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
@@ -302,14 +302,15 @@ for _ in range(2):
     msg = Bool()
     msg.data = True
     task_pub.publish(msg)
-    rate.sleep()
-time.sleep(3)
+    time.sleep(0.1)
+time.sleep(1)
 
 
 #===self testing, (comment when evaluation)
 engine.clients[move_arm].open_jaw()
 engine.clients[move_arm].wait()
-
+engine.clients[move_arm].reset_pose(walltime=None)
+engine.clients[move_arm].wait()
 
 
 #=== close engine 
