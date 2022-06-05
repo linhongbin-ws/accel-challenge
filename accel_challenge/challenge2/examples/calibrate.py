@@ -39,6 +39,10 @@ DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/chal
 TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
 ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
 
+x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
+YAW = -0.8726640502948968
+pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
+
 
 def cam_render_test(video_dir=None):
     """ render to check image render quality
@@ -100,14 +104,13 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     print(models)
     _engine.clients[arm_name].reset_pose()
     _engine.clients[arm_name].wait()
-    T_cam_w = _engine.get_signal('ecm','camera_frame_state')
-    # print("cam frame:",  np.rad2deg(T_cam_w.M.GetRPY()))
-    x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
-    # Cam_Roll = T_cam_w.M.GetRPY()[0]
-    # YAW = Cam_Roll-pi/2
-    YAW = -0.8726640502948968
-    pose_origin = RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW])
-    print("Yaw is ", YAW)
+    # T_cam_w = _engine.get_signal('ecm','camera_frame_state')
+    # x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
+    # # Cam_Roll = T_cam_w.M.GetRPY()[0]
+    # # YAW = Cam_Roll-pi/2
+    # YAW = -0.8726640502948968
+    # pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
+    # print("Yaw is ", YAW)
     _engine.clients[arm_name].servo_tool_cp(pose_origin,300)
     _engine.clients[arm_name].wait()
     time.sleep(3)
@@ -120,9 +123,16 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     print("engine error set", _engine.clients[arm_name].joint_calibrate_offset)
     data = {}
     data['image'] = _engine.get_signal('ecm','cameraL_image')
+    print("image shape:",data['image'].shape)
     data['feature'] =  models['dlc_predictor'].predict(data['image'])
-    data['feature'] = np.array([np.array(data['feature']).reshape(-1)])
-    data['err_pred'] = models['keras_model'].predict(models['input_scaler'].transform(data['feature']))
+    print(data['feature'])
+    data['feature'] = np.array(data['feature'])[:,:2].reshape(1,-1)
+    data['feature'] = models['input_scaler'].transform(data['feature'])
+    print("input norm", data['feature'])
+    data['err_pred'] = models['keras_model'].predict(data['feature'])
+    input_test = np.array([[-0.57622886,  0.590467,   -0.54848045,  0.69391084, -0.5523233,   0.5873567,  -0.5669961,   0.64122444]])
+    print("test output", models['keras_model'].predict(input_test))
+    print("pred norm", data['err_pred'])
     data['err_pred'] = models['output_scaler'].inverse_transform(data['err_pred'])
     return data['err_pred'].reshape(-1)
 
@@ -157,13 +167,11 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
 
     # print("ecm moving...")
     # _engine.clients['ecm'].move_ecm_jp([0,0,-.9,0], time_out=40) # will block until the camera stop moving
-    T_cam_w = _engine.get_signal('ecm','camera_frame_state')
-    # print("cam frame:",  np.rad2deg(T_cam_w.M.GetRPY()))
-    Cam_Roll = T_cam_w.M.GetRPY()[0]
-
-    #=== calibrate  
-    x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
-    pose_origin = RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,+Cam_Roll-pi/2])
+    # x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
+    # # Cam_Roll = T_cam_w.M.GetRPY()[0]
+    # # YAW = Cam_Roll-pi/2
+    # YAW = -0.8726640502948968
+    # pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
     _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
     _engine.clients[arm_name].wait()
 
@@ -179,20 +187,23 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
             _error = rng_error.uniform(-ERROR_MAG_ARR,ERROR_MAG_ARR)
             # if num<=574:
             #     continue
+            q_msr =  _engine.clients[arm_name].get_signal('measured_js')
             pub_error(_error)
-            print("                                                  ",end='\r')
-            print(f'num:{num} error: {_error}, ctrl+c to stop', end='\r')
-            sleep(0.8)
-        _engine.clients[arm_name].servo_tool_cp(pose_origin,200)
+            print(f'num:{num} error: {_error}, ctrl+c to stop')
+            # q_msr =  _engine.clients[arm_name].get_signal('measured_js')
+            # q_dsr = _error + np.array(q_msr)
+            # _engine.clients[arm_name].servo_jp(q_dsr.tolist())
+            sleep(0.1)
+        _engine.clients[arm_name].servo_tool_cp(pose_origin,50)
         _engine.clients[arm_name].wait()
-        sleep(1.4)
-        print("T error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
+        sleep(3)
+        # print("T error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
 
         if (not load_dict is None) and is_predict:
             data = {}
             data['image'] = _engine.get_signal('ecm','cameraL_image')
             data['feature'] =  models['dlc_predictor'].predict(data['image'])
-            data['feature'] = np.array([np.array(data['feature']).reshape(-1)])
+            data['feature'] = np.array(data['feature'])[:,:2].reshape(1,-1)
             data['err_pred'] = models['keras_model'].predict(models['input_scaler'].transform(data['feature']))
             data['err_pred'] = models['output_scaler'].inverse_transform(data['err_pred'])
             return data['err_pred'].reshape(-1)
@@ -210,6 +221,7 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
         if not save_data_dir is None:
             data_dict = {}
             data_dict['error'] = _error
+            print("save data..")
             data_dict['image'] = _engine.get_signal('ecm','cameraL_image')
             timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
             filename = save_data_dir / f'error_{timestamp}.npz'
@@ -243,7 +255,8 @@ def make_dataset(data_dir):
     xs = []
     ys = []
     for d in data_buffer:
-        x = np.array(d['feature']).reshape(-1)
+        # x = np.array(d['feature']).reshape(-1)
+        x = np.array(d['feature'][:,:2]).reshape(-1)
         xs.append(x)
         y = np.array(d['error']).reshape(-1)
         y = y[:3] # only the first 3 joints
@@ -251,7 +264,10 @@ def make_dataset(data_dir):
     xs = np.stack(xs, axis=0)
     ys = np.stack(ys, axis=0)
     
-
+    # print("feature", d['feature'].shape)
+    # print(d['feature'])
+    # print("image shape",d['image'].shape)
+    # print(x)
     input_scaler = StandardScaler()
     input_scaler.fit(xs)
     xs_norm = input_scaler.transform(xs)
@@ -275,6 +291,8 @@ def make_features(load_dir, save_dir, dlc_config_path):
             data = np.load(f, allow_pickle=True)
             data = {k: data[k] for k in data.keys()}
             data['feature'] = dlc_predictor.predict(data['image'])
+            # print(data['image'].shape)
+            # return
             # print(data)
             # print(data['error'])
             # print(data['feature'])
@@ -318,8 +336,13 @@ def train_mlp(train_data_dir, test_data_dir, save_model_dir):
     test_pred_err = np.abs(test_data[5].inverse_transform(test_pred)-test_data[1])
     print(f"test error mean: {np.mean(test_pred_err)}, std:{np.std(test_pred_err)} ")
     print(f"test error mean (Deg): {np.rad2deg(np.mean(test_pred_err))}, std:{np.rad2deg(np.std(test_pred_err))} ")
-
+    print("=================")
+    print("test data input shape", test_data[0].shape)
+    print("test data input [1]", test_data[0][0,:], test_data[2][0,:])
+    print("test data output [1]", test_data[1][0,:], test_data[3][0,:])
+    print("test data predict output [1]", test_data[5].inverse_transform(test_pred)[0,:], test_pred[0,:])
     scaler_load = pickle.load(open(str(Path(save_model_dir) / 'scalers.pkl'),'rb'))
+    return
     # print(scaler_load['input_scaler'].mean_)
 
     # plt.plot(history.history['acc'])
@@ -383,8 +406,8 @@ if __name__ == '__main__':
         TEST_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / 'test'
         joint_error_test(seed=TEST_TRAJ_SEED, _engine=engine, save_data_dir=TEST_ERROR_DATA_DIR)
     elif args.p == 6:
-        data_dir = Path(ERROR_DATA_DIR) / 'test'
-        train_data = make_dataset(data_dir=data_dir, dlc_config_path=DLC_CONFIG_PATH)
+        data_dir = Path(ERROR_DATA_DIR) / 'test_ft'
+        train_data = make_dataset(data_dir=data_dir)
         print(train_data)
     elif args.p == 7:
         load_dir = Path(ERROR_DATA_DIR) / 'test'
@@ -411,11 +434,12 @@ if __name__ == '__main__':
         load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
                     'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
                     'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
-        joint_error_test(seed=ONLINE_TEST_TRAJ_SEED, _engine=engine, 
+        error = joint_error_test(seed=ONLINE_TEST_TRAJ_SEED, _engine=engine, 
         load_dict=load_dict, is_predict=True)
-    
+        print("predict error deg :", np.rad2deg(error))
     elif args.p == 11:
         error_gt = np.deg2rad([1, 2, 0, 0 ,0, 0])
+        # error_gt = np.array([-0.00195975, -0.03527083, -0.013013,0,0,0])  
         set_error('psm2', error_gt.tolist())
         # set_error('psm2', [0,0, 0, 0,0,0])
         load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
