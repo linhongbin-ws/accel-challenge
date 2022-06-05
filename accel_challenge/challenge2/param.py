@@ -24,7 +24,7 @@ grasp_point_offset = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[0, 0, -0.008]))
 # T_gt_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.09,0.03,0.]))
 T_gt_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.1,0.03,0.]))
 # T_gt_n = Frame(Rotation.RPY(*[0, 0, 0]), Vector(*[-0.05,0.08,0.]))
-T_hover_gt = RPY2T(0,0,0.3, 0, 0, 0)
+T_hover_gt = RPY2T(0,0,0.15, 0, 0, 0)
 
 
 #==== suture task

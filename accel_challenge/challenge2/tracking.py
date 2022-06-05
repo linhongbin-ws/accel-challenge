@@ -16,16 +16,23 @@ from time import sleep
 import ros_numpy
 from accel_challenge.challenge2.tool import PointCloud2_2_xyzNimage, render_rgb_xyz
 import tensorflow as tf
-
+from deeplabcut.pose_estimation_tensorflow.core.predict import extract_cnn_output, multi_pose_predict, argmax_pose_predict
+import os
 
 class DLC_Predictor():
-    def __init__(self, config_path) -> None:
+    # refer https://github.com/ambareeshsrja16/Surgical_Tool_Tracking/blob/master/Deeplabcut_new.ipynb
+    def __init__(self, config_path, use_gpu=False) -> None:
         """ initialization is slow """
+        self.use_gpu = use_gpu
+        if not use_gpu:
+            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
         # load config
         # config_path = join(PACKAGE_ROOT_PATH, "data","dlc_calibrate-dlc_calibrate-2022-01-24","config.yaml")
-        physical_devices = tf.config.list_physical_devices('GPU')
-        print(f"available device: {physical_devices}")
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        if use_gpu:
+            physical_devices = tf.config.list_physical_devices('GPU')
+            print(f"available device: {physical_devices}")
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
         
         try:
             cfg = load_config(str(config_path))
@@ -72,9 +79,16 @@ class DLC_Predictor():
         print("weight path", dlc_cfg['init_weights'])
         trainingsiterations = (dlc_cfg['init_weights'].split(sep)[-1]).split('-')[-1]
         dlc_cfg['batch_size'] = cfg['batch_size']
+        self.batch_size = cfg['batch_size']
         DLCscorer = auxiliaryfunctions.GetScorerName(cfg, shuffle, trainFraction, trainingsiterations=trainingsiterations)
-        self.sess, self.inputs, self.outputs = predict.setup_GPUpose_prediction(dlc_cfg)
-        self.pose_tensor = predict.extract_GPUprediction(self.outputs, dlc_cfg)
+        # self.sess, self.inputs, self.outputs = predict.setup_GPUpose_prediction(dlc_cfg)
+        # self.pose_tensor = predict.extract_GPUprediction(self.outputs, dlc_cfg)
+        if use_gpu:
+            self.sess, self.inputs, self.outputs = predict.setup_GPUpose_prediction(dlc_cfg)
+            self.pose_tensor = predict.extract_GPUprediction(self.outputs, dlc_cfg)
+        else:
+            self.sess, self.inputs, self.outputs = predict.setup_pose_prediction(dlc_cfg)
+        self.dlc_cfg = dlc_cfg
         print("Running ", DLCscorer, " with # of trainingiterations:", trainingsiterations)
 
         # print("sess",self.sess)
@@ -95,16 +109,37 @@ class DLC_Predictor():
             raise NotImplementedError
 
         images = None
-        for _ in range(8):
+        for _ in range(self.batch_size):
             # _image = np.expand_dims(image, axis=0)
             images = _image if images is None else np.concatenate((images, _image), axis=0)
 
-        # print(images.shape)
-        # print(image.shape)
+        print(images.shape)
+        print(_image.shape)
         # print(self.sess)
-        pose = self.sess.run(self.pose_tensor, feed_dict={self.inputs: images.astype(float)})
-        # print(pose)
-        pose_list = [(pose[i][0], pose[i][1], pose[i][2]) for i in range(int(pose.shape[0]/8))]
+        if self.use_gpu:       
+            import time
+            start = time.time()
+            pose = self.sess.run(self.pose_tensor, feed_dict={self.inputs: images.astype(float)})
+            print("test inside predict time",time.time() - start)
+        else:
+            
+            # outputs_np = self.sess.run(self.outputs, feed_dict={self.inputs: images})
+            # scmap, locref = extract_cnn_output(outputs_np, self.dlc_cfg)
+            # num_outputs = self.dlc_cfg.get("num_outputs", 1)
+            # if num_outputs > 1:
+            #     pose = multi_pose_predict(scmap, locref, self.dlc_cfg["stride"], num_outputs)
+            # else:
+            #     pose = argmax_pose_predict(scmap, locref, self.dlc_cfg["stride"])
+                
+            import time
+            start = time.time()
+            pose = predict.getpose(np.squeeze(_image, axis=0), self.dlc_cfg, self.sess, self.inputs, self.outputs)
+            print("test inside predict time",time.time() - start)
+            pose[:, [0,1,2]] = pose[:, [1,0,2]]
+        # pose = self.sess.run(self.pose_tensor, feed_dict={self.inputs: images.astype(float)})
+
+        print(pose)
+        pose_list = [(pose[i][0], pose[i][1], pose[i][2]) for i in range(int(pose.shape[0]/self.batch_size))]
 
         if input_depth_xyz is None:
             return pose_list

@@ -96,14 +96,17 @@ def set_error(arm_name, data):
 def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     models = {}
     from tensorflow.keras.models import load_model
+    _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
+    start = time.time()
     models['dlc_predictor'] = DLC_Predictor(load_dict['dlc_config_path'])
+    print("DLC_Predictor intialize time",time.time() - start)
     models['keras_model'] = load_model(load_dict['keras_model_path'])
     scalers =  pickle.load(open(load_dict['scalers_path'],'rb'))
     models['input_scaler'] = scalers['input_scaler']
     models['output_scaler'] = scalers['output_scaler']
     print(models)
-    _engine.clients[arm_name].reset_pose()
-    _engine.clients[arm_name].wait()
+    # _engine.clients[arm_name].reset_pose()
+    # _engine.clients[arm_name].wait()
     # T_cam_w = _engine.get_signal('ecm','camera_frame_state')
     # x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
     # # Cam_Roll = T_cam_w.M.GetRPY()[0]
@@ -111,9 +114,7 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     # YAW = -0.8726640502948968
     # pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
     # print("Yaw is ", YAW)
-    _engine.clients[arm_name].servo_tool_cp(pose_origin,300)
-    _engine.clients[arm_name].wait()
-    time.sleep(3)
+
     q = _engine.clients[arm_name].get_signal('measured_js')
     print("q error", np.array(q) - np.array(_engine.clients[arm_name]._q_dsr))
     print(_engine.clients[arm_name].kin.is_out_qlim(q))
@@ -124,7 +125,9 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     data = {}
     data['image'] = _engine.get_signal('ecm','cameraL_image')
     print("image shape:",data['image'].shape)
+    start = time.time()
     data['feature'] =  models['dlc_predictor'].predict(data['image'])
+    print("DLC_Predictor predict time",time.time() - start)
     print(data['feature'])
     data['feature'] = np.array(data['feature'])[:,:2].reshape(1,-1)
     data['feature'] = models['input_scaler'].transform(data['feature'])

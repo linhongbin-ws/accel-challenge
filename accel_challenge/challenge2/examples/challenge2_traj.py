@@ -16,7 +16,7 @@ from pathlib import Path
 #===params
 team_name = 'tstone'
 move_arm = 'psm2'
-INTER_NUM = 50 # interpolate points number
+INTER_NUM = 100 # interpolate points number
 DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
 TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
 ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
@@ -87,15 +87,15 @@ elif _Y < -pi /2:
 grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0]) 
 T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
 
-# #===== calibration
-# engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
-# error = calibrate_joint_error(_engine=engine, 
-#                         load_dict=load_dict,  arm_name=move_arm)
-# # print("predict error deg  (value):", np.rad2deg(error))
+#===== calibration
+engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
+error = calibrate_joint_error(_engine=engine, 
+                        load_dict=load_dict,  arm_name=move_arm)
+# print("predict error deg  (value):", np.rad2deg(error))
 # if 'joint_calibrate_offset_gt' in globals():
 #     print("predict error (value)  (ground truth error):", error, error - joint_calibrate_offset_gt[:3])
 #     print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - joint_calibrate_offset_gt[:3]))
-# joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
+joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
 # engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
 
 
@@ -103,7 +103,7 @@ T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
 #=========== move to hover pose
 T_g_w_dsr = T_hover_gt * T_g_w_dsr # desire tool pose
 T_HOVER_POSE = T_g_w_dsr
-engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 100)
+engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 # time.sleep(0.2)
 T_g_w_dsr_prv = T_g_w_dsr
@@ -125,7 +125,7 @@ T_TARGET_POSE = T_target_w
 #print("approach to grasp target..")
 print("grasp..")
 T_g_w_dsr = Frame(grasp_R, T_TARGET_POSE.p)
-engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 200)
+engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 #print(T_g_w_dsr)
 T_g_w_dsr_prv = T_g_w_dsr
@@ -149,7 +149,7 @@ time.sleep(0.2)
 #print("lift needle..")
 T_g_w_dsr = T_HOVER_POSE
 print("hover..")
-engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 300)
+engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 #print(T_g_w_dsr)
 T_g_w_dsr_prv = T_g_w_dsr
@@ -253,7 +253,7 @@ print("entry dsr error 3:", T_NEX_w.p-T_EXIT.p)
 print("move to entry #1..")
 T_tip_w_dsr = T_NET_w
 T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()
-engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, 200)
+engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 time.sleep(0.2)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
