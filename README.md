@@ -39,7 +39,7 @@
     pip install -e .
     ```  
 
-- modify a minor in original surgical_robotics_challenge, edit 
+- modify a minor in original surgical_robotics_challenge, edit file `<path to surgical_robotics_challenge>/scripts/surgical_robotics_challenge/launch_crtk_interface.py`
     from 
     ```py
     import psm_arm
