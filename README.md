@@ -36,6 +36,7 @@
 - Install accel-challenge
     ```
     cd <path to accel-challenge>
+    pip install -r requirements.txt
     pip install -e .
     ```  
 
@@ -87,6 +88,7 @@
     run challenge#2 
     ```sh
     cd <path to accel-challenge>/accel_challenge/challenge2
+    source eval/init.sh
     python example/challenge2_traj.py 
     ```
     or
@@ -94,6 +96,7 @@
     run challenge#3 
     ```sh
     cd <path to accel-challenge>/accel_challenge/challenge2
+    source eval/init.sh
     python example/challenge3_traj.py 
     ```
 
