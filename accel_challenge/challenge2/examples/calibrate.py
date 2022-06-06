@@ -27,11 +27,17 @@ TEST_TRAJ_SEED = 66
 ONLINE_TEST_TRAJ_SEED = 55
 TRAJ_POINTS_NUMS = 600
 NET_INTER_DIM_LIST = [400,300,200]
-VIDEO_DIR = '/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc'
-DLC_CONFIG_PATH_PSM2 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
-DLC_CONFIG_PATH_PSM1 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/psm1-dlc-01-2022-06-06/config.yaml"
-TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
-ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
+# VIDEO_DIR = '/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc'
+# DLC_CONFIG_PATH_PSM2 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
+# DLC_CONFIG_PATH_PSM1 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/psm1-dlc-01-2022-06-06/config.yaml"
+
+DLC_CONFIG_PATH_PSM2 = "../model/dlc/psm2/config.yaml"
+DLC_CONFIG_PATH_PSM1 = "../model/dlc/psm1/config.yaml"
+
+# TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
+# ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
+ERROR_DATA_DIR = "../model/error_data"
+
 
 x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
 YAW = -0.8726640502948968
@@ -442,7 +448,7 @@ if __name__ == '__main__':
     elif args.p == 8:
         train_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
         test_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
-        train_mlp(train_data_dir, test_data_dir, ERROR_DATA_DIR)
+        train_mlp(train_data_dir, test_data_dir, Path(ERROR_DATA_DIR) / arm_name)
     elif args.p == 9:
         import random
         image_dir_list = sorted((Path(ERROR_DATA_DIR) / arm_name  / 'train').glob('**/*.npz'))
@@ -471,13 +477,15 @@ if __name__ == '__main__':
         engine.clients[arm_name].wait()
         error_gt = np.deg2rad([1, 2, 0, 0 ,0, 0])
         # error_gt = np.array([-0.00195975, -0.03527083, -0.013013,0,0,0])  
-        set_error('psm2', error_gt.tolist())
+        set_error(arm_name, error_gt.tolist())
         # set_error('psm2', [0,0, 0, 0,0,0])
-        load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
+        load_dict = {'dlc_config_path':DLC_CONFIG_PATH_dict[arm_name],
                     'keras_model_path':str(Path(ERROR_DATA_DIR) / arm_name/ 'model.hdf5'),
                     'scalers_path':str(Path(ERROR_DATA_DIR) / arm_name/ 'scalers.pkl')}
         error = calibrate_joint_error(_engine=engine, 
-                              load_dict=load_dict,  arm_name='psm2')
+                              load_dict=load_dict,  arm_name=arm_name)
+        engine.clients[arm_name].reset_pose()
+        engine.clients[arm_name].wait()
         print("predict error (value)  (ground truth error):", error, error - error_gt[:3])
         print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - error_gt[:3]))
         # dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=TEST_IMAGE_FILE_DIR)

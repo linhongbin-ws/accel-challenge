@@ -12,3 +12,7 @@ accel_challenge/challenge2/examples/__pycache__/
 surgical_robotics_challenge
 
 accel_challenge/challenge1/models/
+
+accel_challenge/model/dlc/
+
+accel_challenge/model/error_data/
