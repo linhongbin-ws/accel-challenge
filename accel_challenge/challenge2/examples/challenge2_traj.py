@@ -17,15 +17,12 @@ print("Elapse time: imports",time.time() - start)
 
 
 #===params
-team_name = 'tstone'
+team_name = 'Tstone'
 move_arm = 'psm2'
 INTER_NUM = 100 # interpolate points number
-DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
-TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
-ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
-load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
-            'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
-            'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
+# DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
+# TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
+# ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
 INSERTION_ITPL_NUM = 150
 thres_err = 0.1
 
@@ -63,7 +60,10 @@ engine.start()
 # joint_calibrate_offset[0] = -0.2
 print("reset pose..")
 engine.clients[move_arm].reset_pose(walltime=None)
-from accel_challenge.challenge2.examples.calibrate import calibrate_joint_error
+from accel_challenge.challenge2.examples.calibrate import calibrate_joint_error, DLC_CONFIG_PATH_dict, ERROR_DATA_DIR
+load_dict = {'dlc_config_path':DLC_CONFIG_PATH_dict[move_arm],
+                    'keras_model_path':str(Path(ERROR_DATA_DIR) / move_arm/ 'model.hdf5'),
+                    'scalers_path':str(Path(ERROR_DATA_DIR) / move_arm/ 'scalers.pkl')}
 # engine.clients[move_arm].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
 # time.sleep(0.3)

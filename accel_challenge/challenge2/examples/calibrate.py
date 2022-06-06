@@ -31,12 +31,12 @@ NET_INTER_DIM_LIST = [400,300,200]
 # DLC_CONFIG_PATH_PSM2 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
 # DLC_CONFIG_PATH_PSM1 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/psm1-dlc-01-2022-06-06/config.yaml"
 
-DLC_CONFIG_PATH_PSM2 = "../model/dlc/psm2/config.yaml"
-DLC_CONFIG_PATH_PSM1 = "../model/dlc/psm1/config.yaml"
+DLC_CONFIG_PATH_PSM2 = "../../model/dlc/psm2/config.yaml"
+DLC_CONFIG_PATH_PSM1 = "../../model/dlc/psm1/config.yaml"
 
 # TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
 # ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
-ERROR_DATA_DIR = "../model/error_data"
+ERROR_DATA_DIR = "../../model/error_data"
 
 
 x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
