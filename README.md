@@ -3,6 +3,7 @@
 - open a terminal
 
     ```sh
+    cd
     git clone https://github.com/linhongbin-ws/accel-challenge.git
     ```
 
@@ -27,8 +28,9 @@
 
 - Install surgical_robot_challenge
     ```
+    cd 
     git clone https://github.com/collaborative-robotics/surgical_robotics_challenge
-    cd <path to accel-challenge>surgical_robotics_challenge/scripts/
+    cd <path to surgical_robotics_challenge>/scripts/
     pip install -e .
     ```
 - Install accel-challenge
@@ -44,6 +46,7 @@
     import ecm_arm
     import scene
     ```
+    to
     ```py
     from surgical_robotics_challenge import psm_arm
     from surgical_robotics_challenge import ecm_arm
