@@ -1,3 +1,4 @@
+from asyncio import QueueEmpty
 from accel_challenge.challenge2.ros_client import ClientEngine
 from PyKDL import Frame, Rotation, Vector
 from accel_challenge.challenge2.tool import RPY2T, T2PoseStamped
@@ -12,6 +13,9 @@ from std_msgs.msg import Bool
 import rospy
 from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
 from pathlib import Path
+import time 
+start = time.time()
+
 
 #===params
 team_name = 'tstone'
@@ -62,8 +66,21 @@ engine.clients[move_arm].reset_pose(walltime=None)
 engine.clients[move_arm].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
 # time.sleep(0.3)
-task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+team_name+'/task2', Bool)
+task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+team_name+'/task2', Bool, queue_size=1)
+print("Elapse time: init object",time.time() - start)
 
+#===== calibration
+engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
+error = calibrate_joint_error(_engine=engine, 
+                        load_dict=load_dict,  arm_name=move_arm)
+# print("predict error deg  (value):", np.rad2deg(error))
+# if 'joint_calibrate_offset_gt' in globals():
+#     print("predict error (value)  (ground truth error):", error, error - joint_calibrate_offset_gt[:3])
+#     print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - joint_calibrate_offset_gt[:3]))
+joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
+engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
+print("predict joint offset:", joint_calibrate_offset)
+print("Elapse time: calibration",time.time() - start)
 
 #=== calulating grasp pose
 # w = engine.clients['ambf'].client.get_world_handle()
@@ -73,8 +90,10 @@ task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+tea
 # engine.clients['ambf'].set_needle_pose(needle_pos0, needle_rpy0)
 # measure meedle intial pose
 T_n_w0 = engine.get_signal('scene', 'measured_needle_cp')
-print("needle initial p", T_n_w0.p)
-print("needle initial rpy", T_n_w0.M.GetRPY())
+T_ENTRY = engine.get_signal('scene', 'measured_entry1_cp') 
+T_EXIT = engine.get_signal('scene', 'measured_exit1_cp')
+# print("needle initial p", T_n_w0.p)
+# print("needle initial rpy", T_n_w0.M.GetRPY())
 print("hover to needle..")
 _, _, _Y = T_n_w0.M.GetRPY()
 _offset_theta = pi/2
@@ -87,17 +106,9 @@ elif _Y < -pi /2:
 grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0]) 
 T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
 
-#===== calibration
-engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
-error = calibrate_joint_error(_engine=engine, 
-                        load_dict=load_dict,  arm_name=move_arm)
-# print("predict error deg  (value):", np.rad2deg(error))
-# if 'joint_calibrate_offset_gt' in globals():
-#     print("predict error (value)  (ground truth error):", error, error - joint_calibrate_offset_gt[:3])
-#     print("predict error deg  (value)  (ground truth error):", np.rad2deg(error), np.rad2deg(error - joint_calibrate_offset_gt[:3]))
-joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
-# engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
-
+engine.close_client('ecm')
+engine.close_client('scene')
+print("Elapse time: calculation and close redundant",time.time() - start)
 
 
 #=========== move to hover pose
@@ -112,6 +123,7 @@ T_g_w_dsr = None
 #print("move to hover pose..")
 #print(T_g_w_dsr_prv)
 # time.sleep(1)
+print("Elapse time: move to hover",time.time() - start)
 
 
 #============ approach needle
@@ -133,8 +145,9 @@ T_g_w_dsr = None
 time.sleep(0.2)
 _T_dsr = T_g_w_dsr_prv
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
-print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+# print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
 T_NEEDLE_GRASP = T_g_w_dsr_prv.Inverse() * T_n_w0 # needle base pose w.r.t. gripper point
+print("Elapse time: approaching",time.time() - start)
 
 #============ grasp
 #print("====")
@@ -142,7 +155,7 @@ T_NEEDLE_GRASP = T_g_w_dsr_prv.Inverse() * T_n_w0 # needle base pose w.r.t. grip
 engine.clients[move_arm].close_jaw()
 engine.clients[move_arm].wait()
 time.sleep(0.2)
-
+print("Elapse time: grasp",time.time() - start)
 
 #============ lift needle
 #print("====")
@@ -163,7 +176,8 @@ T_g_w_dsr = None
 T_g_w_dsr = T_g_w_dsr_prv
 _T_dsr = T_g_w_dsr_prv
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
-print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+# print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+print("Elapse time: lift object",time.time() - start)
 
 #====== some pose testing (debugging)
 # for i in range(2,6,1):
@@ -190,8 +204,6 @@ print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
 
 
 #============= some calculation for suture
-T_ENTRY = engine.get_signal('scene', 'measured_entry1_cp') 
-T_EXIT = engine.get_signal('scene', 'measured_exit1_cp')
 alpha = np.deg2rad(35)  # 5mm tip must be seen after penetrating exit hole
 d =  (T_ENTRY.p - T_EXIT.p).Norm()
 r = NEEDLE_R# needle radius
@@ -216,9 +228,9 @@ T_tip_w_ITPL_lst = [T_pivot_w * RPY2T(*[0,0,0, 0,theta,0]) * RPY2T(*[0,0,-r, 0,0
                         for theta in theta_list] # interpolate frame from T_NET_w to T_NEX_w
 T_NET_w = T_tip_w_ITPL_lst[0]# needle entry frame
 T_NEX_w = T_tip_w_ITPL_lst[-1]# needle exit frame
-print("entry dsr error 3:", T_NET_w.p-T_ENTRY.p)
-print("entry dsr error 3:", T_NEX_w.p-T_EXIT.p)
-
+# print("entry dsr error 3:", T_NET_w.p-T_ENTRY.p)
+# print("entry dsr error 3:", T_NEX_w.p-T_EXIT.p)
+print("Elapse time: calculation",time.time() - start)
 
 # #================ move needle to entry point #1 ready pose (for debugging)
 # #print("=============")
@@ -264,10 +276,11 @@ time.sleep(0.2)
 _T_dsr = T_g_w_dsr
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
 _T_msr = engine.clients['psm2'].T_g_w_msr
-print("T error", (_T_msr.p-_T_dsr2.p).Norm())
-print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+# print("T error", (_T_msr.p-_T_dsr2.p).Norm())
+# print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
 #print("T_tip_n ", T_tip_n)
 #print("T_NEEDLE_GRASP ", T_NEEDLE_GRASP)
+print("Elapse time: move to entry",time.time() - start)
 
 #============ insert needle 
 print("insert..")
@@ -283,8 +296,8 @@ for T_tip_w_dsr in T_tip_w_ITPL_lst:
     # print("needle error:", (msr-dsr).Norm())
 engine.clients[move_arm].wait()
 time.sleep(0.1)
-print("exit frame pos: ", T_NEX_w.p)
-print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
+# print("exit frame pos: ", T_NEX_w.p)
+# print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
 # dsr = (T_NEX_w*T_NEEDLE_GRASP*T_tip_n).p
 # print("needle msr pos: ", msr)
@@ -293,9 +306,10 @@ print("exit frame pos: ", engine.get_signal('scene', 'measured_exit1_cp').p)
 _T_dsr = T_g_w_dsr
 _T_dsr2 = engine.clients['psm2'].T_g_w_dsr
 _T_msr = engine.clients['psm2'].T_g_w_msr
-print("T error", (_T_msr.p-_T_dsr2.p).Norm())
-print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
-print("theta:", theta/pi*180)
+# print("T error", (_T_msr.p-_T_dsr2.p).Norm())
+# print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
+# print("theta:", theta/pi*180)
+print("Elapse time: insert",time.time() - start)
 
 #=== send finish signal
 for _ in range(2):

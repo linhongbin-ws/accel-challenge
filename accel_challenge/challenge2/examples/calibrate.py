@@ -2,7 +2,7 @@
 # from distutils.command.config import config
 # from distutils.log import error
 from accel_challenge.challenge2.ros_client import ClientEngine
-from rospy import spin, Publisher, init_node, Rate, is_shutdown
+from rospy import Publisher, init_node, Rate, is_shutdown
 from time import sleep
 # from geometry_msgs.msg import PoseStamped
 # from std_msgs.msg import Bool
@@ -19,10 +19,7 @@ from accel_challenge.challenge2.tracking import DLC_Predictor
 from sklearn.preprocessing import StandardScaler 
 import pickle
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Activation, Dense, BatchNormalization, Dropout
-from tensorflow.keras import optimizers
-from tensorflow.keras.losses import MeanSquaredError
+
 
 
 
@@ -87,7 +84,7 @@ def cam_render_test(video_dir=None):
 def set_error(arm_name, data):
     from sensor_msgs.msg import ChannelFloat32
     init_node('ros_client_engine',anonymous=True)
-    error_pub = Publisher('/ambf/env/' + arm_name + '/errors_model/set_errors', ChannelFloat32)
+    error_pub = Publisher('/ambf/env/' + arm_name + '/errors_model/set_errors', ChannelFloat32, queue_size=1)
     sleep(0.5) # wait a bit to initialize publisher 
     msg = ChannelFloat32()
     msg.values = data
@@ -95,16 +92,21 @@ def set_error(arm_name, data):
     sleep(0.2)
 def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     models = {}
+    import os
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     from tensorflow.keras.models import load_model
+    from tensorflow import device
     _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
     start = time.time()
-    models['dlc_predictor'] = DLC_Predictor(load_dict['dlc_config_path'])
-    print("DLC_Predictor intialize time",time.time() - start)
-    models['keras_model'] = load_model(load_dict['keras_model_path'])
-    scalers =  pickle.load(open(load_dict['scalers_path'],'rb'))
+    with device('/cpu'):
+        models['dlc_predictor'] = DLC_Predictor(load_dict['dlc_config_path'])
+        print("DLC_Predictor intialize time",time.time() - start)
+        models['keras_model'] = load_model(load_dict['keras_model_path'])
+        scalers =  pickle.load(open(load_dict['scalers_path'],'rb'))
     models['input_scaler'] = scalers['input_scaler']
     models['output_scaler'] = scalers['output_scaler']
-    print(models)
+    # print(models)
     # _engine.clients[arm_name].reset_pose()
     # _engine.clients[arm_name].wait()
     # T_cam_w = _engine.get_signal('ecm','camera_frame_state')
@@ -116,26 +118,26 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     # print("Yaw is ", YAW)
 
     q = _engine.clients[arm_name].get_signal('measured_js')
-    print("q error", np.array(q) - np.array(_engine.clients[arm_name]._q_dsr))
-    print(_engine.clients[arm_name].kin.is_out_qlim(q))
-    print("psm dsr",  _engine.clients[arm_name].T_g_w_dsr.p)
-    print("psm msr",  _engine.clients[arm_name].T_g_w_msr.p)
-    print("error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
-    print("engine error set", _engine.clients[arm_name].joint_calibrate_offset)
+    # print("q error", np.array(q) - np.array(_engine.clients[arm_name]._q_dsr))
+    # print(_engine.clients[arm_name].kin.is_out_qlim(q))
+    # print("psm dsr",  _engine.clients[arm_name].T_g_w_dsr.p)
+    # print("psm msr",  _engine.clients[arm_name].T_g_w_msr.p)
+    # print("error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
+    # print("engine error set", _engine.clients[arm_name].joint_calibrate_offset)
     data = {}
     data['image'] = _engine.get_signal('ecm','cameraL_image')
-    print("image shape:",data['image'].shape)
+    # print("image shape:",data['image'].shape)
     start = time.time()
     data['feature'] =  models['dlc_predictor'].predict(data['image'])
-    print("DLC_Predictor predict time",time.time() - start)
-    print(data['feature'])
+    # print("DLC_Predictor predict time",time.time() - start)
+    # print(data['feature'])
     data['feature'] = np.array(data['feature'])[:,:2].reshape(1,-1)
     data['feature'] = models['input_scaler'].transform(data['feature'])
-    print("input norm", data['feature'])
+    # print("input norm", data['feature'])
     data['err_pred'] = models['keras_model'].predict(data['feature'])
     input_test = np.array([[-0.57622886,  0.590467,   -0.54848045,  0.69391084, -0.5523233,   0.5873567,  -0.5669961,   0.64122444]])
-    print("test output", models['keras_model'].predict(input_test))
-    print("pred norm", data['err_pred'])
+    # print("test output", models['keras_model'].predict(input_test))
+    # print("pred norm", data['err_pred'])
     data['err_pred'] = models['output_scaler'].inverse_transform(data['err_pred'])
     return data['err_pred'].reshape(-1)
 
@@ -154,7 +156,7 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
     from sensor_msgs.msg import ChannelFloat32
     _engine.clients[arm_name].reset_pose()
     _engine.clients[arm_name].wait()
-    error_pub = Publisher('/ambf/env/' + arm_name + '/errors_model/set_errors', ChannelFloat32)
+    error_pub = Publisher('/ambf/env/' + arm_name + '/errors_model/set_errors', ChannelFloat32, queue_size=1)
     rate = Rate(100)
     sleep(0.5) # wait a bit to initialize publisher 
     def pub_error(data): 
@@ -188,8 +190,8 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
         num += 1
         if not is_predict:
             _error = rng_error.uniform(-ERROR_MAG_ARR,ERROR_MAG_ARR)
-            # if num<=574:
-            #     continue
+            if num<=1003:
+                continue
             q_msr =  _engine.clients[arm_name].get_signal('measured_js')
             pub_error(_error)
             print(f'num:{num} error: {_error}, ctrl+c to stop')
@@ -362,6 +364,10 @@ def train_mlp(train_data_dir, test_data_dir, save_model_dir):
 def build_keras_model(input_dim, output_dim, inter_dim_list, lr, 
                         is_batchnormlize=False,
                         dropout_amount=None):
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Activation, Dense, BatchNormalization, Dropout
+    from tensorflow.keras import optimizers
+    from tensorflow.keras.losses import MeanSquaredError
     model = Sequential()
     model.add(Dense(50, input_shape = (input_dim, ), kernel_initializer='he_normal'))
     if is_batchnormlize:
@@ -403,6 +409,8 @@ if __name__ == '__main__':
     elif args.p == 3:
         dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=TEST_IMAGE_FILE_DIR)
     elif args.p == 4:
+        engine.clients['psm2'].open_jaw()
+        engine.clients['psm2'].wait()
         TRAIN_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / 'train'
         joint_error_test(seed=TRAIN_TRAJ_SEED, _engine=engine, save_data_dir=TRAIN_ERROR_DATA_DIR)
     elif args.p == 5:
@@ -441,6 +449,8 @@ if __name__ == '__main__':
         load_dict=load_dict, is_predict=True)
         print("predict error deg :", np.rad2deg(error))
     elif args.p == 11:
+        engine.clients['psm2'].open_jaw()
+        engine.clients['psm2'].wait()
         error_gt = np.deg2rad([1, 2, 0, 0 ,0, 0])
         # error_gt = np.array([-0.00195975, -0.03527083, -0.013013,0,0,0])  
         set_error('psm2', error_gt.tolist())

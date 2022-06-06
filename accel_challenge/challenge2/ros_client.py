@@ -53,6 +53,10 @@ class ClientEngine():
                 client.close()
             except Exception as e:
                 print(str(e))
+    
+    def close_client(self, name):
+         self.clients[name].close()
+         del self.clients[name]
 
     def get_signal(self, client_name, signal_name):
         """
@@ -197,7 +201,7 @@ class BaseClient():
         get signal data
         """
         if not self.is_has_signal(signal_name):
-            print("signal_name is not exist")
+            print(f"{signal_name} is not exist")
             return None
         else:
             return self.sub_signals[signal_name].data
@@ -352,7 +356,7 @@ class PSMClient(BaseClient):
         self.subs["measured_base_cp"] = Subscriber(self.topic_wrap('/ambf/env/'+arm_name+'/baselink/State'), RigidBodyState, self._measured_base_cp_cb)
         # self.subs["measured_tool_cp_local"] = Subscriber(self.topic_wrap('/CRTK/'+arm_name+'/measured_cp'), TransformStamped, self._measured_tool_cp_local_cb)  #TODO: tool pose measure topic is not accurate and has drift, dont know why
         self.subs["measured_js"] = Subscriber(self.topic_wrap('/CRTK/'+arm_name+'/measured_js'), JointState, self._measured_js_cb)
-        self.subs["is_grasp"] = Subscriber(self.topic_wrap('/CRTK/'+arm_name+'/is_grasp'), Bool, self._is_grasp_cb)
+        # self.subs["is_grasp"] = Subscriber(self.topic_wrap('/CRTK/'+arm_name+'/is_grasp'), Bool, self._is_grasp_cb)
         self.ros_rate = Rate(120)  #100hz
 
         self.kin = PSM_KIN() # kinematics model

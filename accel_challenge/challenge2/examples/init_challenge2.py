@@ -1,4 +1,3 @@
-from PyKDL import Frame, Rotation, Vector
 from accel_challenge.challenge2.tool import RPY2T, T2PoseStamped
 from accel_challenge.challenge2.examples.calibrate import set_error
 import time
@@ -8,8 +7,10 @@ pi = np.pi
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 import rospy
-from pathlib import Path
-
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', required=True, type=int) # program type, 1 for recording, 2 for trajectory
+args, remaining = parser.parse_known_args()
 
 move_arm = 'psm2'
 
@@ -20,8 +21,8 @@ joint_calibrate_offset_gt = np.array(np.deg2rad([0,0,0,0,0,0]))
 # joint_calibrate_offset = np.array([0,0,0,0,0,0])
 print("setting error: ", joint_calibrate_offset_gt)
 set_error(move_arm, joint_calibrate_offset_gt.tolist())
-needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped)
-needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool)
+needle_pub = rospy.Publisher('/CRTK/Needle/servo_cp', PoseStamped, queue_size=1)
+needle_zero_force_pub = rospy.Publisher('/CRTK/Needle/zero_force', Bool,queue_size=1)
 rate = rospy.Rate(100)
 needle_pos0 = [-0.25786757338201337, 0.5619611862776279, 0.7417253877244148]
 needle_pos0 = [0.25786757338201337, 0.5619611862776279, 0.7417253877244148]
@@ -52,3 +53,11 @@ for i in range(2):
     needle_zero_force_pub.publish(msg)
     rate.sleep()
 time.sleep(1)
+
+trial = 8
+rng_error = np.random.RandomState(np.random.randint(1,1000)) # use local seed
+ERROR_MAG_ARR = np.deg2rad([5,5,0, 0,0,0])
+ERROR_MAG_ARR[2] = 0.05 # simulation unit, for insertion joint
+for i in range(args.s):
+    _error = np.random.uniform(-ERROR_MAG_ARR,ERROR_MAG_ARR)
+set_error('psm2',_error)

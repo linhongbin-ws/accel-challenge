@@ -24,7 +24,7 @@ load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
 
 
 
-
+INTER_NUM_SHORT = 100
 
 engine = ClientEngine()
 
@@ -44,7 +44,7 @@ task3_init_pub.publish(msg)
 while not is_finish_init:
     pass
 
-
+del task3_init_finish_sub
 
 #=== initial objects
 engine.add_clients(['psm1', 'psm2', 'ecm', 'scene'])
@@ -58,16 +58,20 @@ engine.clients['psm1'].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
 # print(engine.clients['psm1'].grasp_point_offset)
 
-#===self testing (comment when evaluation)
-# joint_calibrate_offset_gt = np.array(np.deg2rad([1,2,0,0,0,0]))
-# joint_calibrate_offset_gt[2] = 0.02
-joint_calibrate_offset_gt = np.array([0,0,0,0,0,0])
-print("setting error: ", joint_calibrate_offset_gt)
-set_error('psm1', joint_calibrate_offset_gt.tolist())
-set_error('psm2', joint_calibrate_offset_gt.tolist())
-time.sleep(2)
+# #===self testing (comment when evaluation)
+# # joint_calibrate_offset_gt = np.array(np.deg2rad([1,2,0,0,0,0]))
+# # joint_calibrate_offset_gt[2] = 0.02
+# joint_calibrate_offset_gt = np.array([0,0,0,0,0,0])
+# print("setting error: ", joint_calibrate_offset_gt)
+# set_error('psm1', joint_calibrate_offset_gt.tolist())
+# set_error('psm2', joint_calibrate_offset_gt.tolist())
+# time.sleep(2)
+
+
 T_n_w0 = engine.get_signal('scene', 'measured_needle_cp')
 T_NEEDLE_GRASP_PSM2 = engine.clients['psm2'].T_g_w_msr.Inverse() * T_n_w0 # needle base pose w.r.t. gripper point
+
+engine.close_client('ecm')
 
 for i in range(4):
 
@@ -114,7 +118,7 @@ for i in range(4):
     print("move to entry #{}..".format(i+1))
     T_tip_w_dsr = T_NET_w
     T_g_w_dsr_PSM2 = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP_PSM2.Inverse()
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, INTER_NUM_SHORT)
     engine.clients['psm2'].wait()
     time.sleep(0.5)
     # _T_dsr = T_g_w_dsr_PSM2
@@ -154,11 +158,11 @@ for i in range(4):
     T_g_w_dsr_PSM1 = engine.clients['psm2'].T_g_w_msr * T_NEEDLE_GRASP_PSM2 * T_gt_n_PSM1 
     # print("needle dsr", T_tip_w_dsr.p)
     # print("needle msr", engine.get_signal('scene', 'measured_needle_cp').p)
-    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1*RPY2T(0,0,-0.08,0,0,0), 200)
+    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1*RPY2T(0,0,-0.08,0,0,0), INTER_NUM_SHORT)
     engine.clients['psm1'].open_jaw()
     engine.clients['psm1'].wait()
     time.sleep(2)
-    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, 200)
+    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, INTER_NUM_SHORT)
     engine.clients['psm1'].wait()
     time.sleep(2)
     engine.clients['psm1'].close_jaw()
@@ -181,20 +185,20 @@ for i in range(4):
     #==lift
     print("lift")
     T_g_w_dsr_PSM1 = RPY2T(*[0,0,0.1,0,0,0]) *T_g_w_dsr_PSM1 
-    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, 200)
+    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, INTER_NUM_SHORT)
     engine.clients['psm1'].wait()
     T_g_w_dsr_PSM1 = T_g_w_dsr_PSM1 * RPY2T(*[0,0,0,0,0,-pi/4]) 
-    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, 200)
+    engine.clients['psm1'].servo_tool_cp(T_g_w_dsr_PSM1, INTER_NUM_SHORT)
     engine.clients['psm1'].wait()
     time.sleep(1)
 
     #=== handover
     T_gt_n_PSM2 =  T_gt_n * RPY2T(*[0,0,0, -pi,0, -pi/2])
     T_g_w_dsr_PSM2 = engine.clients['psm1'].T_g_w_msr * T_NEEDLE_GRASP_PSM1 * T_gt_n_PSM2
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2*RPY2T(0,0,-0.09,0,0,0), 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2*RPY2T(0,0,-0.09,0,0,0), INTER_NUM_SHORT)
     engine.clients['psm2'].open_jaw()
     engine.clients['psm2'].wait()
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, INTER_NUM_SHORT)
     engine.clients['psm2'].wait()
     time.sleep(1)
     engine.clients['psm2'].close_jaw()
@@ -204,7 +208,7 @@ for i in range(4):
     engine.clients['psm1'].open_jaw()
     engine.clients['psm1'].wait()
     T_g_w_dsr_PSM2 = RPY2T(*[-0.1,0,0,0,0,0]) * T_g_w_dsr_PSM2 * RPY2T(*[0,0,0,0,0,-pi/4-pi/2]) 
-    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, 200)
+    engine.clients['psm2'].servo_tool_cp(T_g_w_dsr_PSM2, INTER_NUM_SHORT)
     engine.clients['psm2'].wait()
     time.sleep(3)
 
@@ -216,7 +220,7 @@ for _ in range(2):
     msg.data = True
     task_pub.publish(msg)
     time.sleep(0.01)
-time.sleep(0.2)
+time.sleep(0.5)
 
 
 # #===self testing, (comment when evaluation)

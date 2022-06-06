@@ -31,12 +31,12 @@ class DLC_Predictor():
         # config_path = join(PACKAGE_ROOT_PATH, "data","dlc_calibrate-dlc_calibrate-2022-01-24","config.yaml")
         if use_gpu:
             physical_devices = tf.config.list_physical_devices('GPU')
-            print(f"available device: {physical_devices}")
+            # print(f"available device: {physical_devices}")
             tf.config.experimental.set_memory_growth(physical_devices[0], True)
         
         try:
             cfg = load_config(str(config_path))
-            print(cfg)
+            # print(cfg)
         except FileNotFoundError:
             raise FileNotFoundError("It seems the model for shuffle s and trainFraction %s does not exist.")
 
@@ -50,7 +50,7 @@ class DLC_Predictor():
         path_test_config = join(modelfolder, 'test' ,'pose_cfg.yaml')
         try:
             dlc_cfg = load_config(str(path_test_config))
-            print(dlc_cfg)
+            # print(dlc_cfg)
         except FileNotFoundError:
             raise FileNotFoundError(
                 "It seems the model for shuffle %s and trainFraction %s does not exist." % (shuffle, trainFraction))
@@ -65,18 +65,17 @@ class DLC_Predictor():
                 "Snapshots not found! It seems the dataset for shuffle %s has not been trained/does not exist.\n Please train it before using it to analyze videos.\n Use the function 'train_network' to train the network for shuffle %s." % (
                     shuffle, shuffle))
         if cfg['snapshotindex'] == 'all':
-            print(
-                "Snapshotindex is set to 'all' in the config.yaml file. Running video analysis with all snapshots is very costly! Use the function 'evaluate_network' to choose the best the snapshot. For now, changing snapshot index to -1!")
+            #print("Snapshotindex is set to 'all' in the config.yaml file. Running video analysis with all snapshots is very costly! Use the function 'evaluate_network' to choose the best the snapshot. For now, changing snapshot index to -1!")
             snapshotindex = -1
         else:
             snapshotindex = cfg['snapshotindex']
         increasing_indices = np.argsort([int(m.split('-')[1]) for m in Snapshots])
         Snapshots = Snapshots[increasing_indices]
-        print("Using %s" % Snapshots[snapshotindex], "for model", modelfolder)
+        #print("Using %s" % Snapshots[snapshotindex], "for model", modelfolder)
 
 
         dlc_cfg['init_weights'] = join(modelfolder, 'train', Snapshots[snapshotindex])
-        print("weight path", dlc_cfg['init_weights'])
+        #print("weight path", dlc_cfg['init_weights'])
         trainingsiterations = (dlc_cfg['init_weights'].split(sep)[-1]).split('-')[-1]
         dlc_cfg['batch_size'] = cfg['batch_size']
         self.batch_size = cfg['batch_size']
@@ -89,7 +88,7 @@ class DLC_Predictor():
         else:
             self.sess, self.inputs, self.outputs = predict.setup_pose_prediction(dlc_cfg)
         self.dlc_cfg = dlc_cfg
-        print("Running ", DLCscorer, " with # of trainingiterations:", trainingsiterations)
+        #print("Running ", DLCscorer, " with # of trainingiterations:", trainingsiterations)
 
         # print("sess",self.sess)
 
@@ -113,8 +112,8 @@ class DLC_Predictor():
             # _image = np.expand_dims(image, axis=0)
             images = _image if images is None else np.concatenate((images, _image), axis=0)
 
-        print(images.shape)
-        print(_image.shape)
+        #print(images.shape)
+        #print(_image.shape)
         # print(self.sess)
         if self.use_gpu:       
             import time
@@ -138,7 +137,7 @@ class DLC_Predictor():
             pose[:, [0,1,2]] = pose[:, [1,0,2]]
         # pose = self.sess.run(self.pose_tensor, feed_dict={self.inputs: images.astype(float)})
 
-        print(pose)
+        #print(pose)
         pose_list = [(pose[i][0], pose[i][1], pose[i][2]) for i in range(int(pose.shape[0]/self.batch_size))]
 
         if input_depth_xyz is None:
