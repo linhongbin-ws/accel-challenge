@@ -63,43 +63,18 @@
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ben/anaconda3/envs/accel_challenge/lib/ # everytime for init
   ``` -->
 
-## Run
 
-- First modify the file `<path to accel-challenge>/accel_challenge/challenge2/eval/user_var.sh`, there are several path variables. You need to modify according to your enviroment path.
+- modify the file `<path to accel-challenge>/accel_challenge/eval/user_var.sh`, there are several path variables. You need to modify according to your enviroment path.
     ```sh
     AMBF_PATH="/home/ben/ssd/code/robot/ambf"
     SURGICAL_CHALLENGE_PATH='/home/ben/ssd/code/robot/accel-challenge/surgical_robotics_challenge'
     ANACONDA_PATH="/home/ben/anaconda3" 
     ENV_NAME="accel_challenge" # conda virtual environment name
     ```
-- Open a terminal, run
-    ```sh
-    roscore
-    ```
-- Open 2nd terminal, run the following lines to pop out simulator:
-    ```sh
-    cd <path to accel-challenge>/accel_challenge/challenge2
-    source eval/run_simulator.sh
-    ```
-- Open 3rd terminal, run to start `crtk_interface`, which running controllers and rostopics
-    ```sh
-    cd <path to accel-challenge>/accel_challenge/challenge2
-    source eval/run_crtk_interface.sh
-    ```
 
-- Open 4rd terminal to run challenge scripts,
-    run challenge#2 
-    ```sh
-    cd <path to accel-challenge>/accel_challenge/challenge2
-    source eval/init.sh
-    python example/challenge2_traj.py 
-    ```
-    or
 
-    run challenge#3 
-    ```sh
-    cd <path to accel-challenge>/accel_challenge/challenge2
-    source eval/init.sh
-    python example/challenge3_traj.py 
-    ```
+## How to Run
 
+- To run Challenge #1, please refer to [README]()
+- To run Challenge #2, please refer to [README]()
+- To run Challenge #3, please refer to [README]()
