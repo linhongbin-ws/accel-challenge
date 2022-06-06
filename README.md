@@ -75,6 +75,6 @@
 
 ## How to Run
 
-- To run Challenge #1, please refer to [README]()
-- To run Challenge #2, please refer to [README]()
-- To run Challenge #3, please refer to [README]()
+- To run Challenge #1, please refer to [README](https://github.com/linhongbin-ws/accel-challenge/tree/master/accel_challenge/challenge1)
+- To run Challenge #2, please refer to [README](https://github.com/linhongbin-ws/accel-challenge/tree/master/accel_challenge/challenge2)
+- To run Challenge #3, please refer to [README](https://github.com/linhongbin-ws/accel-challenge/tree/master/accel_challenge/challenge3)

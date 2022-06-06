@@ -436,9 +436,9 @@ if __name__ == '__main__':
         load_dir = Path(ERROR_DATA_DIR) / arm_name  / 'test'
         save_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
         make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH_dict[arm_name])
-        load_dir = Path(ERROR_DATA_DIR) / arm_name / 'train'
-        save_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
-        make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH_dict[arm_name])
+        # load_dir = Path(ERROR_DATA_DIR) / arm_name / 'train'
+        # save_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
+        # make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH_dict[arm_name])
     elif args.p == 8:
         train_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
         test_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'

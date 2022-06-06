@@ -1,9 +1,0 @@
-opencv-python==4.2.0.34 # higher version not working in Ubuntu 18.04
-roboticstoolbox-python
-spatialmath-python
-sympy
-#ros_numpy
-ruamel.yaml
-pathlib
-deeplabcut==2.2.1
-simple-pid
