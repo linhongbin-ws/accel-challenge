@@ -27,15 +27,16 @@
 
 
 - Install surgical_robot_challenge
-    ```
-    cd 
+    ```sh
+    cd <path to accel-challenge>
     git clone https://github.com/collaborative-robotics/surgical_robotics_challenge
     cd <path to surgical_robotics_challenge>/scripts/
     pip install -e .
     ```
 - Install accel-challenge
-    ```
+    ```sh
     cd <path to accel-challenge>
+    conda install -c conda-forge wxpython # deeplabcut depends on this package
     pip install -r requirements.txt
     pip install -e .
     ```  
