@@ -1,0 +1,23 @@
+# This is the base file for Coordination Application
+# world config: ADF/world/world.yaml
+world config: ./world_stereo_modified.yaml
+color config: ../surgical_robotics_challenge/ADF/color/colors.yaml
+input devices config: ../surgical_robotics_challenge/ADF/input_devices/input_devices.yaml
+multibody configs:
+  - "../surgical_robotics_challenge/ADF/psm1.yaml" #0
+  - "../surgical_robotics_challenge/ADF/sensors_actuators_psm1.yaml" #1
+  - "../surgical_robotics_challenge/ADF/target1_ik.yaml" #2
+  - "../surgical_robotics_challenge/ADF/psm2.yaml" #3
+  - "../surgical_robotics_challenge/ADF/sensors_actuators_psm2.yaml" #4
+  - "../surgical_robotics_challenge/ADF/target2_ik.yaml" #5
+  - "../surgical_robotics_challenge/ADF/psm3.yaml" #6
+  - "../surgical_robotics_challenge/ADF/sensors_actuators_psm3.yaml" #7
+  - "../surgical_robotics_challenge/ADF/target3_ik.yaml" #8
+  - "../surgical_robotics_challenge/ADF/env.yaml" #9
+  - "../surgical_robotics_challenge/ADF/gynae.yaml" #10
+  - "../surgical_robotics_challenge/ADF/all_targets.yaml" #11
+  - "../surgical_robotics_challenge/ADF/psm_debug.yaml" #12
+  - "../surgical_robotics_challenge/ADF/phantom_without_thread.yaml" #13
+  - "../surgical_robotics_challenge/ADF/ghosts.yaml" #14
+  - "../surgical_robotics_challenge/ADF/phantom_with_thread.yaml" #15
+  - "../surgical_robotics_challenge/ADF/camera_frame.yaml" #16

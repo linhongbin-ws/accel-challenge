@@ -64,7 +64,7 @@
   ``` -->
 
 
-- modify the file `<path to accel-challenge>/accel_challenge/eval/user_var.sh`, there are several path variables. You need to modify according to your enviroment path.
+- modify the file `<path to accel-challenge>/accel_challenge/bash/user_var.sh`, there are several path variables. You need to modify according to your enviroment path.
     ```sh
     AMBF_PATH="/home/ben/ssd/code/robot/ambf"
     SURGICAL_CHALLENGE_PATH='/home/ben/ssd/code/robot/accel-challenge/surgical_robotics_challenge'

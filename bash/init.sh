@@ -1,4 +1,4 @@
-source eval/user_var.sh
+source bash/user_var.sh
 source $ANACONDA_PATH/bin/activate
 conda activate $ENV_NAME
 source $AMBF_PATH/build/devel/setup.bash
