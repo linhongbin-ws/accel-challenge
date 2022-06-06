@@ -10,14 +10,16 @@
 ## Install
 
 - Install [ambf](https://github.com/WPI-AIM/ambf)
-- create conda virtual environment python=3. 
+- create conda virtual environment python=3.7 . 
     ```sh
     conda create -n accel_challenge python=3.7
     conda activate accel_challenge
-    conda install pytorch cudatoolkit=11.3 -c pytorch # if you have gpu, other options can follow pytorch official website
+    pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111
+    python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html  
+    pip install scikit-image
     pip install -r requirements.txt
     ```
-- Install PyKDL on virtual environment, follow the [instruction](https://blog.csdn.net/qq_42237662/article/details/109783935)
+- Install PyKDL on virtual environment from source, follow the [instruction](https://blog.csdn.net/qq_42237662/article/details/109783935)
 
     (note: make sure to uninstall the ros-kdl packages in the system before install PyKDL:
    ```sh

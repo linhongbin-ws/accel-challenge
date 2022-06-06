@@ -28,7 +28,8 @@ ONLINE_TEST_TRAJ_SEED = 55
 TRAJ_POINTS_NUMS = 600
 NET_INTER_DIM_LIST = [400,300,200]
 VIDEO_DIR = '/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc'
-DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
+DLC_CONFIG_PATH_PSM2 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
+DLC_CONFIG_PATH_PSM1 = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/psm1-dlc-01-2022-06-06/config.yaml"
 TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
 ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
 
@@ -39,6 +40,9 @@ pose_origin_psm1 = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(
 pose_origin_dict = {}
 pose_origin_dict['psm2'] = pose_origin_psm2
 pose_origin_dict['psm1'] = pose_origin_psm1
+DLC_CONFIG_PATH_dict = {}
+DLC_CONFIG_PATH_dict['psm2'] = DLC_CONFIG_PATH_PSM2
+DLC_CONFIG_PATH_dict['psm1'] = DLC_CONFIG_PATH_PSM1
 
 def cam_render_test(video_dir=None):
     """ render to check image render quality
@@ -429,12 +433,12 @@ if __name__ == '__main__':
         train_data = make_dataset(data_dir=data_dir)
         print(train_data)
     elif args.p == 7:
-        # load_dir = Path(ERROR_DATA_DIR) / arm_name  / 'test'
-        # save_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
-        # make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH)
+        load_dir = Path(ERROR_DATA_DIR) / arm_name  / 'test'
+        save_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
+        make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH_dict[arm_name])
         load_dir = Path(ERROR_DATA_DIR) / arm_name / 'train'
         save_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
-        make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH)
+        make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH_dict[arm_name])
     elif args.p == 8:
         train_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
         test_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
