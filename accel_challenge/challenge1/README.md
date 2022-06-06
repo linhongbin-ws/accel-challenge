@@ -17,38 +17,6 @@ As a reference, we test our algorithm and achieve Task 1 Overall Score with **0.
 *Time cost: 30s ~ 55s depending on the distance (we ensure the best performance within 1 min, although the iteration process can be terminated in advance.)*
 
 Therefore please feel free to contact us (Name: Bin LI, Email: [bli@mae.cuhk.edu.hk](bli@mae.cuhk.edu.hk)) if you have any questions in estimating our algorithm. Hope you can enjoy it ~
-# Installation
-#### step 1: Install the AMBF as usual
-#### step 2: Create a anaconda environment
-- create conda virtual environment python=3
-    ```sh
-    conda create -n accel_task1 python=3.7
-    conda activate accel_task1
-    ```
-- Install PyKDL on virtual environment, follow the [instruction](https://blog.csdn.net/qq_42237662/article/details/109783935)
-
-#### step 3: Install this repo (our surgical_robot_challenge version) to the created conda env
-Please refer to [README](./scripts/README.md) in the [scripts](./scripts) folder for instructions on installing the Python package for system-wide access.
-- Install surgical_robot_challenge (this repo)
-    ```
-    conda activate accel_task1
-    cd <package_path>/surgical_robotics_challenge/scripts/
-    pip install -e .
-    sudo apt-get install ros-melodic-ros-numpy (as the ros of our platform is melodic)
-    ```
-#### step 4: Install pytorch + detectron2
-- As our code is a learning based algorithm, we need to install Pytorch and its corresponding detectron2 version.
-You can find the Pytorch vs. detectron2 in this [website](https://detectron2.readthedocs.io/en/latest/tutorials/install.html).
-    ```
-    conda activate accel_task1
-    
-  pip3 install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111
-    
-    python -m pip install detectron2 -f \
-    https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html  
-  
-    pip install scikit-image
-  ```
 
 
 # Get started
@@ -62,20 +30,20 @@ You can find the Pytorch vs. detectron2 in this [website](https://detectron2.rea
   ```
 - Open 3rd terminal, run the needle pose estimation:
   ```bash
-  conda activate accel_task1
-  cd <surgical_robotics_challenge/scripts/surgical_robotics_challenge>
-  python task_completion_report.py -t Tstone -e 1
+  conda activate accel_challenge
+  cd <accel-challenge>/accel_challenge/challenge1
+  python challenge1.py -t Tstone -e 1
   ```
   If there exists cv_bridge errors, please run the following code:
   ```bash
-  conda activate accel_task1
+  conda activate accel_challenge
   source ~/catkin_ws/devel/setup.bash (Note that we build the python3 version cv_bridge in ~/catkin_ws folder)
-  cd <surgical_robotics_challenge>/scripts/surgical_robotics_challenge
-  python task_completion_report.py -t Tstone -e 1
+  cd <accel-challenge>/accel_challenge/challenge1
+  python challenge1.py -t Tstone -e 1
   ```
 - Open 4th terminal, run the evaluation for our estimated pose estimation:
   ```bash
-  conda activate accel_task1
+  conda activate accel_challenge
   cd  <surgical_robotics_challenge>/scripts/surgical_robotics_challenge/evaluation
   python evaluation.py -t Tstone -e 1
   ```
