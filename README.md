@@ -27,8 +27,7 @@
 
 - Install surgical_robot_challenge
     ```
-    cd <path to accel-challenge>
-    git submodule update
+    git clone https://github.com/collaborative-robotics/surgical_robotics_challenge
     cd <path to accel-challenge>surgical_robotics_challenge/scripts/
     pip install -e .
     ```
@@ -38,7 +37,18 @@
     pip install -e .
     ```  
 
-- git submodule update
+- modify a minor in original surgical_robotics_challenge, edit 
+    from 
+    ```py
+    import psm_arm
+    import ecm_arm
+    import scene
+    ```
+    ```py
+    from surgical_robotics_challenge import psm_arm
+    from surgical_robotics_challenge import ecm_arm
+    from surgical_robotics_challenge import scene
+    ```
 
 <!-- - install GPU support for DLC (optional)
   ```sh
