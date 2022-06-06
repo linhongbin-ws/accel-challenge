@@ -1,23 +1,21 @@
-
+# import time; start = time.time(); k =0
 import cv2
-from deeplabcut.pose_estimation_tensorflow import predict
-from matplotlib.pyplot import axis 
 from skimage.util import img_as_ubyte
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
+# print("kk")
 from deeplabcut.pose_estimation_tensorflow.config import load_config
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
 from skimage import io
 from deeplabcut.utils import auxiliaryfunctions
 import numpy as np
-from accel_challenge.challenge2.tool import PACKAGE_ROOT_PATH
 from os.path import join
 from os import listdir, sep
 import numpy as np
-from accel_challenge.challenge2.ros_client import ClientEngine
 from time import sleep
-import ros_numpy
-from accel_challenge.challenge2.tool import PointCloud2_2_xyzNimage, render_rgb_xyz
-import tensorflow as tf
-from deeplabcut.pose_estimation_tensorflow.core.predict import extract_cnn_output, multi_pose_predict, argmax_pose_predict
 import os
+from deeplabcut.pose_estimation_tensorflow.core import predict
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
 
 class DLC_Predictor():
     # refer https://github.com/ambareeshsrja16/Surgical_Tool_Tracking/blob/master/Deeplabcut_new.ipynb
@@ -30,9 +28,12 @@ class DLC_Predictor():
         # load config
         # config_path = join(PACKAGE_ROOT_PATH, "data","dlc_calibrate-dlc_calibrate-2022-01-24","config.yaml")
         if use_gpu:
+            import tensorflow as tf
+            # from deeplabcut.pose_estimation_tensorflow.core.predict import setup_GPUpose_prediction,extract_GPUprediction
             physical_devices = tf.config.list_physical_devices('GPU')
             # print(f"available device: {physical_devices}")
             tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
         
         try:
             cfg = load_config(str(config_path))
@@ -219,6 +220,8 @@ class DLC_Predictor():
 #         return (x_cam, y_cam, z_cam)
 
 if __name__ == '__main__':
+    from accel_challenge.challenge2.ros_client import ClientEngine
+
 
     TEST_PREDICT = False
     TEST_PROJECTION = False
@@ -241,7 +244,7 @@ if __name__ == '__main__':
         data = camera_engine.get_signal('ecm', 'cameraL_image_depth')
         # data.data = None
         # print(data.data[0:32])
-
+        import ros_numpy
         _data = ros_numpy.point_cloud2.pointcloud2_to_array(data)
         _data_rgb = ros_numpy.point_cloud2.split_rgb_field(_data)
         rgb = np.array([_data_rgb['r'], _data_rgb['g'], _data_rgb['b']]).T.reshape(1080,1920,3)
@@ -255,6 +258,7 @@ if __name__ == '__main__':
         camera_engine.close()
     
     if TEST_PREDICT_WITH_DEPTH:
+        from accel_challenge.challenge2.tool import PointCloud2_2_xyzNimage, render_rgb_xyz
         camera_engine = ClientEngine()
         camera_engine.add_clients(['ecm'])
         camera_engine.start()

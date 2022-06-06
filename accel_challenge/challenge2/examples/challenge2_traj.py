@@ -1,20 +1,19 @@
-from asyncio import QueueEmpty
+import time 
+start = time.time()
 from accel_challenge.challenge2.ros_client import ClientEngine
+print("Elapse time: import 5",time.time() - start)
 from PyKDL import Frame, Rotation, Vector
-from accel_challenge.challenge2.tool import RPY2T, T2PoseStamped
+from accel_challenge.challenge2.tool import RPY2T
 from accel_challenge.challenge2.param import T_gt_n, T_hover_gt, NEEDLE_R, T_tip_n
-from accel_challenge.challenge2.examples.calibrate import set_error, calibrate_joint_error
+
 import time
 import numpy as np
 pi = np.pi
-
-from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 import rospy
-from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
 from pathlib import Path
-import time 
-start = time.time()
+print("Elapse time: imports",time.time() - start)
+
 
 
 #===params
@@ -27,7 +26,8 @@ ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/chall
 load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
             'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
             'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
-
+INSERTION_ITPL_NUM = 150
+thres_err = 0.1
 
 
 # #===self testing (comment when evaluation)
@@ -63,7 +63,8 @@ engine.start()
 # joint_calibrate_offset[0] = -0.2
 print("reset pose..")
 engine.clients[move_arm].reset_pose(walltime=None)
-engine.clients[move_arm].wait()
+from accel_challenge.challenge2.examples.calibrate import calibrate_joint_error
+# engine.clients[move_arm].wait()
 engine.clients['ecm'].move_ecm_jp([0,0,0,0])
 # time.sleep(0.3)
 task_pub = rospy.Publisher('/surgical_robotics_challenge/completion_report/'+team_name+'/task2', Bool, queue_size=1)
@@ -97,6 +98,10 @@ T_EXIT = engine.get_signal('scene', 'measured_exit1_cp')
 print("hover to needle..")
 _, _, _Y = T_n_w0.M.GetRPY()
 _offset_theta = pi/2
+if T_n_w0.M.UnitZ()[2] >=0: 
+    print("positive direction...")
+else:
+    print("negative direction...")
 _Y +=_offset_theta
 #print("Yaw angle :",  _Y*180/pi)
 if _Y > pi /2: # project to -pi to pi range
@@ -222,7 +227,6 @@ T_pivot_w = Frame(Rotation(Rx_pivot_w, Ry_pivot_w, Rz_pivot_w), p_pivot_w)
 # needle entry and exit frame
 TR_n_pivot = RPY2T(*[0,0,0,  -pi/2,0 ,0]) # Rotation Frame from pivot to needle base
 # needle insertion interpolte trajectory frames
-INSERTION_ITPL_NUM = 400
 theta_list = np.linspace(theta, -theta-alpha, INSERTION_ITPL_NUM).tolist()
 T_tip_w_ITPL_lst = [T_pivot_w * RPY2T(*[0,0,0, 0,theta,0]) * RPY2T(*[0,0,-r, 0,0,0]) * TR_n_pivot
                         for theta in theta_list] # interpolate frame from T_NET_w to T_NEX_w
@@ -267,15 +271,26 @@ T_tip_w_dsr = T_NET_w
 T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
-time.sleep(0.2)
+time.sleep(0.6)
 # msr = (engine.get_signal('scene', 'measured_needle_cp')*T_tip_n).p
 # dsr = (T_g_w_dsr*T_NEEDLE_GRASP*T_tip_n).p
 # print("needle msr pos: ", msr)
 # print("needle dsr pos: ", dsr)
 # print("error:", (msr-dsr).Norm())
-_T_dsr = T_g_w_dsr
-_T_dsr2 = engine.clients['psm2'].T_g_w_dsr
-_T_msr = engine.clients['psm2'].T_g_w_msr
+
+# while True:
+#     _T_dsr = T_g_w_dsr
+#     _T_msr = engine.clients['psm2'].T_g_w_msr
+#     err = (_T_msr.p-_T_dsr.p).Norm() + (_T_msr.M*_T_dsr.M.Inverse()).GetRotAngle()[0]
+#     if err < thres_err:
+#         break
+    
+#     engine.clients[move_arm].reset_pose(walltime=None)
+#     engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
+#     engine.clients[move_arm].wait()
+#     time.sleep(0.6)
+
+
 # print("T error", (_T_msr.p-_T_dsr2.p).Norm())
 # print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
 #print("T_tip_n ", T_tip_n)

@@ -3,7 +3,6 @@ pptk
 roboticstoolbox-python
 spatialmath-python
 sympy
-ros_numpy
 ruamel.yaml
 pathlib
 

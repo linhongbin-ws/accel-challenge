@@ -1,11 +1,6 @@
-# from distutils.command.build import build
-# from distutils.command.config import config
-# from distutils.log import error
-from accel_challenge.challenge2.ros_client import ClientEngine
+# import time; start = time.time(); k =0
 from rospy import Publisher, init_node, Rate, is_shutdown
 from time import sleep
-# from geometry_msgs.msg import PoseStamped
-# from std_msgs.msg import Bool
 from pathlib import Path
 import datetime
 import time
@@ -13,9 +8,10 @@ from numpy import pi
 import numpy as np
 import argparse
 from tqdm import tqdm
-import io
-from accel_challenge.challenge2.tool import RPY2T, T2PoseStamped
+from accel_challenge.challenge2.tool import RPY2T
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
 from accel_challenge.challenge2.tracking import DLC_Predictor
+# k+=1;print(f"Elapse time: import {k}",time.time() - start)
 from sklearn.preprocessing import StandardScaler 
 import pickle
 
@@ -31,24 +27,27 @@ TEST_TRAJ_SEED = 66
 ONLINE_TEST_TRAJ_SEED = 55
 TRAJ_POINTS_NUMS = 600
 NET_INTER_DIM_LIST = [400,300,200]
-VIDEO_DIR = './data'
+VIDEO_DIR = '/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc'
 DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
 TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
 ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
 
 x_origin, y_origin, z_origin = -0.211084,    0.560047 - 0.3,    0.706611 + 0.2 # for psm2
 YAW = -0.8726640502948968
-pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
-
+pose_origin_psm2 = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
+pose_origin_psm1 = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, pi/2,0]) * RPY2T(*[0,0,0,0,0,-YAW])
+pose_origin_dict = {}
+pose_origin_dict['psm2'] = pose_origin_psm2
+pose_origin_dict['psm1'] = pose_origin_psm1
 
 def cam_render_test(video_dir=None):
     """ render to check image render quality
     """
     import cv2 
     print("tab `q` to exit..")
-    engine.clients['psm2'].reset_pose()
-    engine.clients['psm2'].wait()
-    q_dsr = engine.clients['psm2'].q_dsr
+    # engine.clients['psm2'].reset_pose()
+    # engine.clients['psm2'].wait()
+    # q_dsr = engine.clients['psm2'].q_dsr
     is_move =False
     #==video setup
     if not video_dir is None:
@@ -67,12 +66,7 @@ def cam_render_test(video_dir=None):
         cv2.imshow('preview',frame) # Display the resulting frame
         if not video_dir is None:
             video.write(frame)
-        if not is_move:
-            q_dsr[2] +=0.2
-            engine.clients['psm2'].servo_jp(q_dsr, interpolate_num=600,clear_queue=False)
-            q_dsr[1] +=0.2
-            engine.clients['psm2'].servo_jp(q_dsr, interpolate_num=600,clear_queue=False)
-            is_move=True
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -97,7 +91,7 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     from tensorflow.keras.models import load_model
     from tensorflow import device
-    _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
+    _engine.clients[arm_name].servo_tool_cp(pose_origin_dict[arm_name],100)
     start = time.time()
     with device('/cpu'):
         models['dlc_predictor'] = DLC_Predictor(load_dict['dlc_config_path'])
@@ -143,6 +137,7 @@ def calibrate_joint_error(_engine, load_dict,  arm_name='psm2'):
 
 
 def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_name='psm2', is_predict=False):
+    import io
     if not load_dict is None: 
         models = {}
         from tensorflow.keras.models import load_model
@@ -177,7 +172,7 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
     # # YAW = Cam_Roll-pi/2
     # YAW = -0.8726640502948968
     # pose_origin = RPY2T(*[0,0.15,0.1,0,0,0]) * RPY2T(*[0.2,0,0,0,0,0]) * RPY2T(*[x_origin, y_origin, z_origin, pi, -pi/2,0]) * RPY2T(*[0,0,0,0,0,YAW]) 
-    _engine.clients[arm_name].servo_tool_cp(pose_origin,100)
+    _engine.clients[arm_name].servo_tool_cp(pose_origin_dict[arm_name],100)
     _engine.clients[arm_name].wait()
 
     #===== error variantional data
@@ -190,8 +185,8 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
         num += 1
         if not is_predict:
             _error = rng_error.uniform(-ERROR_MAG_ARR,ERROR_MAG_ARR)
-            if num<=1003:
-                continue
+            # if num<=1003:
+            #     continue
             q_msr =  _engine.clients[arm_name].get_signal('measured_js')
             pub_error(_error)
             print(f'num:{num} error: {_error}, ctrl+c to stop')
@@ -199,7 +194,7 @@ def joint_error_test(seed, _engine, save_data_dir=None, load_dict=None,  arm_nam
             # q_dsr = _error + np.array(q_msr)
             # _engine.clients[arm_name].servo_jp(q_dsr.tolist())
             sleep(0.1)
-        _engine.clients[arm_name].servo_tool_cp(pose_origin,50)
+        _engine.clients[arm_name].servo_tool_cp(pose_origin_dict[arm_name],50)
         _engine.clients[arm_name].wait()
         sleep(3)
         # print("T error", (_engine.clients[arm_name].T_g_w_dsr.p - _engine.clients[arm_name].T_g_w_msr.p).Norm())
@@ -285,6 +280,7 @@ def make_dataset(data_dir):
 def make_features(load_dir, save_dir, dlc_config_path):
     """ make features and save 
     """
+    import io
     load_dir = Path(load_dir).expanduser()
     dlc_predictor = DLC_Predictor(dlc_config_path)
     save_ft_names = ['error', 'feature']
@@ -300,7 +296,7 @@ def make_features(load_dir, save_dir, dlc_config_path):
             # return
             # print(data)
             # print(data['error'])
-            # print(data['feature'])
+            print(data['feature'])
             data_dict = {k:data[k] for k in save_ft_names} 
             with io.BytesIO() as f1:
                 np.savez_compressed(f1, **data_dict)
@@ -390,50 +386,62 @@ def build_keras_model(input_dim, output_dim, inter_dim_list, lr,
     return model
 
 if __name__ == '__main__':
+    from accel_challenge.challenge2.ros_client import ClientEngine
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', required=True, type=int) # program type, 1 for recording, 2 for trajectory
+    parser.add_argument('--arm', required=True, type=str) # program type, 1 for recording, 2 for trajectory
     args, remaining = parser.parse_known_args()
+    arm_name = args.arm
+    print(arm_name)
     assert args.p in [1, 2, 3, 4, 5,6,7,8,9,10,11]
     is_no_engine = args.p in [7,8,9]
 
     #======init variables
     if not is_no_engine:
         engine =  ClientEngine()
-        engine.add_clients(['ecm','psm2'])
+        engine.add_clients(['ecm'])
         engine.start()
 
     if args.p == 1:
-        cam_render_test(video_dir=VIDEO_DIR)
+        cam_render_test(video_dir=Path(VIDEO_DIR) / arm_name)
     elif args.p == 2:
-        joint_error_test(seed=TRAIN_TRAJ_SEED, _engine=engine)
+        joint_error_test(seed=TRAIN_TRAJ_SEED, _engine=engine, arm_name=arm_name)
     elif args.p == 3:
         dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=TEST_IMAGE_FILE_DIR)
     elif args.p == 4:
-        engine.clients['psm2'].open_jaw()
-        engine.clients['psm2'].wait()
-        TRAIN_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / 'train'
-        joint_error_test(seed=TRAIN_TRAJ_SEED, _engine=engine, save_data_dir=TRAIN_ERROR_DATA_DIR)
+        engine.add_clients([arm_name])
+        engine.start()
+        engine.clients[arm_name].open_jaw()
+        engine.clients[arm_name].wait()
+        TRAIN_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / arm_name / 'train'
+        joint_error_test(seed=TRAIN_TRAJ_SEED, _engine=engine, save_data_dir=TRAIN_ERROR_DATA_DIR, arm_name=arm_name)
     elif args.p == 5:
-        TEST_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / 'test'
-        joint_error_test(seed=TEST_TRAJ_SEED, _engine=engine, save_data_dir=TEST_ERROR_DATA_DIR)
+        engine.add_clients([arm_name])
+        engine.start()
+        engine.clients[arm_name].open_jaw()
+        engine.clients[arm_name].wait()
+        TEST_ERROR_DATA_DIR = Path(ERROR_DATA_DIR) / arm_name / 'test'
+        joint_error_test(seed=TEST_TRAJ_SEED, _engine=engine, save_data_dir=TEST_ERROR_DATA_DIR, arm_name=arm_name)
     elif args.p == 6:
         data_dir = Path(ERROR_DATA_DIR) / 'test_ft'
         train_data = make_dataset(data_dir=data_dir)
         print(train_data)
     elif args.p == 7:
-        load_dir = Path(ERROR_DATA_DIR) / 'test'
-        save_dir = Path(ERROR_DATA_DIR) / 'test_ft'
-        make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH)
-        load_dir = Path(ERROR_DATA_DIR) / 'train'
-        save_dir = Path(ERROR_DATA_DIR) / 'train_ft'
+        # load_dir = Path(ERROR_DATA_DIR) / arm_name  / 'test'
+        # save_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
+        # make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH)
+        load_dir = Path(ERROR_DATA_DIR) / arm_name / 'train'
+        save_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
         make_features(load_dir, save_dir, dlc_config_path=DLC_CONFIG_PATH)
     elif args.p == 8:
-        train_data_dir = Path(ERROR_DATA_DIR) / 'train_ft'
-        test_data_dir = Path(ERROR_DATA_DIR) / 'test_ft'
+        train_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'train_ft'
+        test_data_dir = Path(ERROR_DATA_DIR) / arm_name / 'test_ft'
         train_mlp(train_data_dir, test_data_dir, ERROR_DATA_DIR)
     elif args.p == 9:
         import random
-        image_dir_list = sorted((Path(ERROR_DATA_DIR) / 'train').glob('**/*.npz'))
+        image_dir_list = sorted((Path(ERROR_DATA_DIR) / arm_name  / 'train').glob('**/*.npz'))
         image_dir = random.choice(image_dir_list)
         print("render data: ",image_dir)
         with image_dir.open('rb') as f:
@@ -442,22 +450,28 @@ if __name__ == '__main__':
         dlc_predict_test(config_path=DLC_CONFIG_PATH, test_image_dir=data['image'])
 
     elif args.p == 10:
+        engine.add_clients([arm_name])
+        engine.start()
+        engine.clients[arm_name].open_jaw()
+        engine.clients[arm_name].wait()
         load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
-                    'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
-                    'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
+                    'keras_model_path':str(Path(ERROR_DATA_DIR) / arm_name  / 'model.hdf5'),
+                    'scalers_path':str(Path(ERROR_DATA_DIR) / arm_name / 'scalers.pkl')}
         error = joint_error_test(seed=ONLINE_TEST_TRAJ_SEED, _engine=engine, 
-        load_dict=load_dict, is_predict=True)
+        load_dict=load_dict, is_predict=True, arm_name=arm_name)
         print("predict error deg :", np.rad2deg(error))
     elif args.p == 11:
-        engine.clients['psm2'].open_jaw()
-        engine.clients['psm2'].wait()
+        engine.add_clients([arm_name])
+        engine.start()
+        engine.clients[arm_name].open_jaw()
+        engine.clients[arm_name].wait()
         error_gt = np.deg2rad([1, 2, 0, 0 ,0, 0])
         # error_gt = np.array([-0.00195975, -0.03527083, -0.013013,0,0,0])  
         set_error('psm2', error_gt.tolist())
         # set_error('psm2', [0,0, 0, 0,0,0])
         load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
-                    'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
-                    'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
+                    'keras_model_path':str(Path(ERROR_DATA_DIR) / arm_name/ 'model.hdf5'),
+                    'scalers_path':str(Path(ERROR_DATA_DIR) / arm_name/ 'scalers.pkl')}
         error = calibrate_joint_error(_engine=engine, 
                               load_dict=load_dict,  arm_name='psm2')
         print("predict error (value)  (ground truth error):", error, error - error_gt[:3])
