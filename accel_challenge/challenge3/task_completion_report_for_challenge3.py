@@ -308,7 +308,7 @@ if __name__ == "__main__":
     cfg.MODEL.ROI_KEYPOINT_HEAD.NUM_KEYPOINTS = 2
     cfg.TEST.KEYPOINT_OKS_SIGMAS = np.ones((2, 1), dtype=float).tolist()
     cfg.MODEL.WEIGHTS = os.path.join(
-        "./models/final.pth")  # path to the model we just trained
+        "../../model/final.pth")  # path to the model we just trained
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set a custom testing threshold
     predictor = DefaultPredictor(cfg)
     print('---model loaded!')
@@ -505,13 +505,13 @@ if __name__ == "__main__":
             az = torch.tensor([[0, 0, 1], [0, 0, 1], [0, 0, 1]], dtype=torch.float32).unsqueeze(dim=0).cuda()
 
             # sample point in the reprojected ecllips
-            Pt = np.loadtxt('./models/needle_axis_keypoints.txt').T # the origin of our coordinates is the center of the line (l_st2end)
+            Pt = np.loadtxt('../../model/needle_axis_keypoints.txt').T # the origin of our coordinates is the center of the line (l_st2end)
             Pts = torch.tensor(Pt, dtype=torch.float32).cuda()
             print('---needle model loaded!')
 
             M = torch.tensor([[1, 0, 0], [0, 1, 0], [-intrinsic_params[0, 2], -intrinsic_params[1, 2], intrinsic_params[0, 0]]], dtype=torch.float32).cuda()
 
-            for step in range(500):  # 1500
+            for step in range(1000):  # 1500
                 t_0 = time.time()
                 s1_ = torch.cat((s1, tensor_1_col), dim=1)
                 s2_ = torch.cat((s2, tensor_1_col), dim=1)
@@ -644,17 +644,17 @@ if __name__ == "__main__":
 
             proj_p2 = needle_proj_pts[select].detach().cpu().numpy()
             real_p = pixelsL.detach().cpu().numpy()
-            plt.imshow(imgL)
-            plt.scatter(proj_p2[:, 0], proj_p2[:, 1], c='b', s=1)
-            plt.scatter(real_p[:, 0], real_p[:, 1], c='g', s=0.3)
+            # plt.imshow(imgL)
+            # plt.scatter(proj_p2[:, 0], proj_p2[:, 1], c='b', s=1)
+            # plt.scatter(real_p[:, 0], real_p[:, 1], c='g', s=0.3)
 
-            proj_p2 = needle_proj_pts_R[select].detach().cpu().numpy()
-            real_p = pixelsR.detach().cpu().numpy()
-            plt.imshow(imgR)
-            # import matplotlib.pyplot as plt
-            plt.scatter(proj_p2[:, 0], proj_p2[:, 1], c='b', s=1)
-            plt.scatter(real_p[:, 0], real_p[:, 1], c='g', s=0.3)
+            # proj_p2 = needle_proj_pts_R[select].detach().cpu().numpy()
+            # real_p = pixelsR.detach().cpu().numpy()
+            # plt.imshow(imgR)
+            # # import matplotlib.pyplot as plt
+            # plt.scatter(proj_p2[:, 0], proj_p2[:, 1], c='b', s=1)
+            # plt.scatter(real_p[:, 0], real_p[:, 1], c='g', s=0.3)
 
-            plt.xlim(0, 1920)
-            plt.ylim(0, 1080)
-            plt.show()
+            # plt.xlim(0, 1920)
+            # plt.ylim(0, 1080)
+            # plt.show()

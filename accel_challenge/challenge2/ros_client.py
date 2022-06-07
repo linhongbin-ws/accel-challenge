@@ -457,7 +457,7 @@ class PSMClient(BaseClient):
 
                 
     def open_jaw(self):
-        self.servo_jaw_jp(0.3, 100)
+        self.servo_jaw_jp(0.4, 100)
         
     def get_T_g_w_from_js(self, qs):
         return self.get_signal('measured_base_cp') * SE3_2_T(self.kin.fk(qs)) * self.grasp_point_offset
