@@ -266,6 +266,7 @@ print("Elapse time: calculation",time.time() - start)
 #================ move needle to entry point #1
 #print("=============")
 #print("move needle to approach entry#1")
+engine.clients[move_arm].reset_pose()
 print("move to entry #1..")
 T_tip_w_dsr = T_NET_w
 T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()

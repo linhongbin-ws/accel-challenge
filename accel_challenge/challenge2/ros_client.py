@@ -382,7 +382,7 @@ class PSMClient(BaseClient):
         elif self.arm_name == 'psm1':
             _q_dsr = q_dsr or self.reset_jnt_psm1
         self.servo_jp(_q_dsr, interpolate_num=100)
-        self.open_jaw()
+        # self.open_jaw()
         self.wait(walltime=walltime)
 
     

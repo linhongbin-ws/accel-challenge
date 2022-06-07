@@ -5,7 +5,11 @@
     ```sh
     cd
     git clone https://github.com/linhongbin-ws/accel-challenge.git
+    cd <path to accel-challenge>
+    git clone https://github.com/collaborative-robotics/surgical_robotics_challenge.git
     ```
+
+- Since our trained model is large, we put all trained model on the cloud. Please download them to merge to the directory  `<path to accel-challenge>/model/`
 
 ## Install
 
@@ -30,8 +34,6 @@
 
 - Install surgical_robot_challenge
     ```sh
-    cd <path to accel-challenge>
-    git clone https://github.com/collaborative-robotics/surgical_robotics_challenge
     cd <path to surgical_robotics_challenge>/scripts/
     pip install -e .
     ```
