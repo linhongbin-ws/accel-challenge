@@ -316,7 +316,7 @@ time.sleep(0.6)
 #print("T_tip_n ", T_tip_n)
 #print("T_NEEDLE_GRASP ", T_NEEDLE_GRASP)
 print("Elapse time: move to entry",time.time() - start)
-
+time.sleep(0.4)
 #============ insert needle 
 print("insert..")
 T_tip_w_dsr_prv = T_tip_w_dsr
