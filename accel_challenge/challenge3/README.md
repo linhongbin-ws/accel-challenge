@@ -41,7 +41,7 @@
 
 ## Note
 
-- This script require to use cameraL image ros topic for calibration.
+- This script require to use cameraL and cameraR images ros topic for calibration and tracking.
 
 
 ## Results

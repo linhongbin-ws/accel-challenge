@@ -15,8 +15,7 @@
     source bash/run_crtk_interface.sh
     ```
 
-- Open 4rd terminal to run challenge scripts,
-    run challenge#2 
+- Open 4rd terminal to run challenge 2 script,
     ```sh
     cd <path to accel-challenge>
     source bash/init.sh
