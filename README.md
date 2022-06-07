@@ -9,7 +9,7 @@
     git clone https://github.com/collaborative-robotics/surgical_robotics_challenge.git
     ```
 
-- Since our trained model is large, we put all trained model on the cloud. Please download them to merge to the directory  `<path to accel-challenge>/model/`
+- Since our trained model is large, we put all trained model on the cloud. Please download them from [google cloud](https://drive.google.com/drive/folders/1eiXzMv_ZAUeLER_NTRM3zLrPhgxLtzn8?usp=sharing) and merge the `model` folder to the directory  `<path to accel-challenge>/model/`
 
 ## Install
 

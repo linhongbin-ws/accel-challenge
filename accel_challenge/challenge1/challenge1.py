@@ -302,7 +302,7 @@ if __name__ == "__main__":
     cfg.MODEL.ROI_KEYPOINT_HEAD.NUM_KEYPOINTS = 2
     cfg.TEST.KEYPOINT_OKS_SIGMAS = np.ones((2, 1), dtype=float).tolist()
     cfg.MODEL.WEIGHTS = os.path.join(
-        "./models/final.pth")  # path to the model we just trained
+        "../../model/final.pth")  # path to the model we just trained
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set a custom testing threshold
     predictor = DefaultPredictor(cfg)
     print('---model loaded!')
@@ -489,7 +489,7 @@ if __name__ == "__main__":
     az = torch.tensor([[0, 0, 1], [0, 0, 1], [0, 0, 1]], dtype=torch.float32).unsqueeze(dim=0).cuda()
 
     # sample point in the reprojected ecllips
-    Pt = np.loadtxt('./models/needle_axis_keypoints.txt').T # the origin of our coordinates is the center of the line (l_st2end)
+    Pt = np.loadtxt('../../model/needle_axis_keypoints.txt').T # the origin of our coordinates is the center of the line (l_st2end)
     Pts = torch.tensor(Pt, dtype=torch.float32).cuda()
     print('---needle model loaded!')
 
@@ -621,4 +621,4 @@ if __name__ == "__main__":
     T_offset_frame = RT2Frame(T_offset[:3,:3], T_offset[:3, 3])
     task_report.task_1_report(frame_to_pose_stamped_msg(T_l_f_frame.Inverse()*pose_frame*T_offset_frame))
     # task_report.task_1_report(frame_to_pose_stamped_msg(T_l_f_frame.Inverse()*pose_frame))
-    print('final estimation: ', T_l_f_frame.Inverse()*pose_frame)
+    # print('final estimation: ', T_l_f_frame.Inverse()*pose_frame)

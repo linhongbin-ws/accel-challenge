@@ -21,8 +21,16 @@
     cd <path to accel-challenge>
     source bash/init.sh
     cd <path to accel-challenge>/accel_challenge/challenge2
-    python example/challenge2_traj.py 
+    python examples/challenge2_traj.py 
     ```
+- Open 5th terminal, run the evaluation for challenge2:
+  ```bash
+  cd <path to accel-challenge>
+  source bash/init.sh
+  cd  <surgical_robotics_challenge>/scripts/surgical_robotics_challenge/evaluation
+  python evaluation.py -t Tstone -e 2
+  ```
+
 
 ## Note
 
