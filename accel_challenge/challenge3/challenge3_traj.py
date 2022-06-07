@@ -18,13 +18,7 @@ from ambf_msgs.msg import RigidBodyState
 #===params
 team_name = 'Tstone'
 INTER_NUM = 50 # interpolate points number
-DLC_CONFIG_PATH = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/config.yaml"
-TEST_IMAGE_FILE_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/dlc/dlc_calibrate-1-2022-04-20/labeled-data/calibrate_record20220420T000725/img3035.png"
-ERROR_DATA_DIR = "/home/ben/ssd/code/robot/accel-challenge/accel_challenge/challenge2/data/error_data"
-load_dict = {'dlc_config_path':DLC_CONFIG_PATH,
-            'keras_model_path':str(Path(ERROR_DATA_DIR) / 'model.hdf5'),
-            'scalers_path':str(Path(ERROR_DATA_DIR) / 'scalers.pkl')}
-
+from accel_challenge.challenge2.examples.calibrate import calibrate_joint_error, DLC_CONFIG_PATH_dict, ERROR_DATA_DIR
 
 
 INTER_NUM_SHORT = 250
@@ -81,6 +75,31 @@ ecm_sub = rospy.Subscriber('/ambf/env/CameraFrame/State', RigidBodyState, ecm_cb
 T_ecmINw = Frame()
 T_nINw_reported = Frame()
 
+
+
+#=== initial objects
+engine.add_clients(['psm1', 'psm2', 'ecm', 'scene'])
+engine.start()
+# joint_calibrate_offset[0] = -0.2
+print("reset pose..")
+
+#===== calibration
+move_arm_list = ['psm2', 'psm1']
+for move_arm in move_arm_list:
+    joint_angle = 0.3
+    engine.clients[move_arm].open_jaw(joint_angle)
+    engine.clients[move_arm].joint_calibrate_offset = np.zeros(6)
+    load_dict = {'dlc_config_path':DLC_CONFIG_PATH_dict[move_arm],
+                        'keras_model_path':str(Path(ERROR_DATA_DIR) / move_arm/ 'model.hdf5'),
+                        'scalers_path':str(Path(ERROR_DATA_DIR) / move_arm/ 'scalers.pkl')}
+    error = calibrate_joint_error(_engine=engine, 
+                            load_dict=load_dict,  arm_name=move_arm)
+    joint_calibrate_offset = np.concatenate((error, np.zeros(3)))
+    engine.clients[move_arm].joint_calibrate_offset = joint_calibrate_offset
+    print("predict joint offset:", joint_calibrate_offset)
+    engine.clients[move_arm].reset_pose()
+
+
 is_finish_init = False
 needle_pose = None
 time.sleep(0.3)
@@ -92,13 +111,8 @@ while not is_finish_init:
 
 del task3_init_finish_sub
 
-#=== initial objects
-engine.add_clients(['psm1', 'psm2', 'ecm', 'scene'])
-engine.start()
-# joint_calibrate_offset[0] = -0.2
-print("reset pose..")
 engine.clients['psm1'].grasp_point_offset = RPY2T(*[0,0, -0.030, 0,0,0])
-engine.clients['psm2'].grasp_point_offset = RPY2T(*[0,0, -0.011, 0,0,0])
+engine.clients['psm2'].grasp_point_offset = RPY2T(*[0,0, -0.013, 0,0,0])
 engine.clients['psm1'].reset_pose()
 engine.clients['psm1'].open_jaw()
 engine.clients['psm1'].wait()
@@ -334,7 +348,8 @@ for i in range(4):
     # print("T error 2", (_T_dsr.p-_T_dsr2.p).Norm())
     # print("theta:", theta/pi*180)
 
-
+    if i== 3:
+        break
 
 
     #==== left arm extract needle
