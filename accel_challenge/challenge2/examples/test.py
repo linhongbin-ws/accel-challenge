@@ -3,7 +3,6 @@ start = time.time()
 from accel_challenge.challenge2.ros_client import ClientEngine
 print("Elapse time: import 5",time.time() - start)
 from PyKDL import Frame, Rotation, Vector
-import PyKDL
 from accel_challenge.challenge2.tool import RPY2T
 from accel_challenge.challenge2.param import T_gt_n, T_hover_gt, NEEDLE_R, T_tip_n
 
@@ -105,22 +104,12 @@ else:
     print("negative direction...")
 _Y +=_offset_theta
 #print("Yaw angle :",  _Y*180/pi)
-# if _Y > pi /2: # project to -pi to pi range
-#     _Y = _Y -pi
-# elif _Y < -pi /2:
-#     _Y = _Y + pi
-grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0])
+if _Y > pi /2: # project to -pi to pi range
+    _Y = _Y -pi
+elif _Y < -pi /2:
+    _Y = _Y + pi
+grasp_R = Rotation.RPY(*[0, 0, _Y]) * Rotation.RPY(*[pi, 0, 0]) 
 T_g_w_dsr = Frame(grasp_R, T_n_w0.p)
-
-direction = PyKDL.dot(grasp_R.UnitX(), T_n_w0.M.UnitY())
-print('directio: ', direction)
-if direction > 0:
-    print('convert the grasp direction')
-    _, _, cur_yaw = T_g_w_dsr.M.GetRPY()
-    if cur_yaw > 0:
-        T_g_w_dsr = T_g_w_dsr * RPY2T(0, 0, 0, 0, 0, -pi)
-    else:
-        T_g_w_dsr = T_g_w_dsr * RPY2T(0, 0, 0, 0, 0, pi)
 
 engine.close_client('ecm')
 engine.close_client('scene')
@@ -153,15 +142,6 @@ T_TARGET_POSE = T_target_w
 #print("approach to grasp target..")
 print("grasp..")
 T_g_w_dsr = Frame(grasp_R, T_TARGET_POSE.p)
-direction = PyKDL.dot(grasp_R.UnitX(), T_n_w0.M.UnitY())
-print('directio: ', direction)
-if direction > 0:
-    print('convert the grasp direction')
-    _, _, cur_yaw = T_g_w_dsr.M.GetRPY()
-    if cur_yaw > 0:
-        T_g_w_dsr = T_g_w_dsr * RPY2T(0, 0, 0, 0, 0, -pi)
-    else:
-        T_g_w_dsr = T_g_w_dsr * RPY2T(0, 0, 0, 0, 0, pi)
 engine.clients[move_arm].servo_tool_cp(T_g_w_dsr, INTER_NUM)
 engine.clients[move_arm].wait()
 #print(T_g_w_dsr)
@@ -286,6 +266,7 @@ print("Elapse time: calculation",time.time() - start)
 #================ move needle to entry point #1
 #print("=============")
 #print("move needle to approach entry#1")
+engine.clients[move_arm].reset_pose()
 print("move to entry #1..")
 T_tip_w_dsr = T_NET_w
 T_g_w_dsr = T_tip_w_dsr  * T_tip_n.Inverse() * T_NEEDLE_GRASP.Inverse()

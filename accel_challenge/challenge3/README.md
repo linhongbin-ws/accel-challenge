@@ -52,3 +52,7 @@ We tested our code for the case of no joint errors. It could succeed as follows:
   <img src="/accel_challenge/challenge3/media/sucess_without_joint_error.jpeg" width="350" title="suceed without joint error">
 </p>
 
+We have a video for sucessfully finishing the task 3 under the no-joint-error case. Here are the [video](https://mycuhk-my.sharepoint.com:/g/personal/1155135739_link_cuhk_edu_hk/ETHtVZcRWlJPqk4J2ge2POMBcmceeFsfaVF0wt4rih8lYw?e=35WBTh)
+
+For the error cases, we have calibration procedures to predict joint error. But due to the time limit, we do no have chances to test it.
+
