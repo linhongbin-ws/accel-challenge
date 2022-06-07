@@ -20,15 +20,24 @@
     ```sh
     cd <path to accel-challenge>
     source bash/init.sh
-    cd <path to accel-challenge>/accel_challenge/challenge2
-    python examples/challenge2_traj.py 
+    cd <path to accel-challenge>/accel_challenge/challenge3
+    python task_completion_report_for_challenge3.py
     ```
-- Open 5th terminal, run the evaluation for challenge2:
+- Open 4rd terminal to run challenge scripts,
+    run challenge#2 
+    ```sh
+    cd <path to accel-challenge>
+    source bash/init.sh
+    cd <path to accel-challenge>/accel_challenge/challenge3
+    python challenge3_traj.py 
+    ```
+
+- Open 6th terminal, run the evaluation for challenge3:
   ```bash
   cd <path to accel-challenge>
   source bash/init.sh
   cd  <surgical_robotics_challenge>/scripts/surgical_robotics_challenge/evaluation
-  python evaluation.py -t Tstone -e 2
+  python evaluation.py -t Tstone -e 3
   ```
 
 
