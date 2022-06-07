@@ -49,14 +49,19 @@
 We tested our code for the case of no joint errors. It could succeed as follows:
 
 <p align="center">
-  <img src="/accel_challenge/challenge3/media/sucess_without_joint_error.jpeg" width="350" title="suceed without joint error">
+  <img src="/accel_challenge/challenge3/media/sucess_without_joint_error.png" width="700" title="suceed without joint error">
 </p>
 
 We have a video for sucessfully finishing the task 3 under the no-joint-error case. Here are the videos
 
-[1]. [case 1](https://mycuhk-my.sharepoint.com:/g/personal/1155135739_link_cuhk_edu_hk/EQ5RWHKIelhEmrkmoWjs-s0BvzU_CM2GonIs82xWp5jY3w?e=WWM86P)
-[1]. [case 2](https://mycuhk-my.sharepoint.com:/g/personal/1155135739_link_cuhk_edu_hk/ETHtVZcRWlJPqk4J2ge2POMBcmceeFsfaVF0wt4rih8lYw?e=35WBTh)
-[2]. [case 3](https://mycuhk-my.sharepoint.com:/g/personal/1155135739_link_cuhk_edu_hk/EU4yhznuLa1Pr3MJ3ycrt7IBbz8XnLL_cSnGFdgA2NpTCA?e=6oBg3T)
+- [case 1](https://mycuhk-my.sharepoint.com/:v:/g/personal/1155135739_link_cuhk_edu_hk/EQ5RWHKIelhEmrkmoWjs-s0BvzU_CM2GonIs82xWp5jY3w?e=CKPaGB)
+
+- [case 2](https://mycuhk-my.sharepoint.com/:v:/g/personal/1155135739_link_cuhk_edu_hk/ETHtVZcRWlJPqk4J2ge2POMBcmceeFsfaVF0wt4rih8lYw?e=MyXMgA)
+- [case 3](https://mycuhk-my.sharepoint.com/:v:/g/personal/1155135739_link_cuhk_edu_hk/EU4yhznuLa1Pr3MJ3ycrt7IBbz8XnLL_cSnGFdgA2NpTCA?e=9icUln)
 
 For the error cases, we have calibration procedures to predict joint error. But due to the time limit, we do no have chances to test it.
+
+
+
+
 
