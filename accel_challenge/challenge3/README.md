@@ -45,3 +45,12 @@
 
 - This script require to use cameraL image ros topic for calibration.
 
+
+## Results
+
+We tested our code for the case of no joint errors. It could succeed as follows:
+
+<p align="center">
+  <img src="/media/sucess_without_joint_error.jpeg" width="350" title="suceed without joint error">
+</p>
+
