@@ -15,16 +15,14 @@
     source bash/run_crtk_interface.sh
     ```
 
-- Open 4rd terminal to run challenge scripts,
-    run challenge#2 
+- Open 4rd terminal to run needle tracking algorithm
     ```sh
     cd <path to accel-challenge>
     source bash/init.sh
     cd <path to accel-challenge>/accel_challenge/challenge3
     python task_completion_report_for_challenge3.py
     ```
-- Open 4rd terminal to run challenge scripts,
-    run challenge#2 
+- Open 4rd terminal to run challenge 3 trajectory script,
     ```sh
     cd <path to accel-challenge>
     source bash/init.sh
